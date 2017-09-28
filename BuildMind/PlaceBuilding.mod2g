@@ -1,0 +1,34 @@
+use BuildMind as knowledge.
+order = linear.
+
+/**
+* Determine the optimal place for the agent to place a building.
+* Right now, it will always construct in the main.
+*/
+module PlaceBuilding(Agent, Thing, RegionId) {		
+	% Creep Colony placement
+	if	bel(Thing = 'Zerg Creep Colony', chokepoint(X1, Y1, _, _, RegionId, _), 
+			getValidConstructionSite(Agent, X2, Y2, RegionId, Thing), distanceSq(X1, Y1, X2, Y2, D12),
+			not((getValidConstructionSite(Agent, X3, Y3, RegionId, Thing), distanceSq(X1, Y1, X3, Y3, D13), D13 < D12))) then
+				insert(buildTarget(Agent, X2, Y2, RegionId)) +
+				(Agent).send!(buildTarget(X2, Y2, RegionId)).
+				
+	% Hatchery placement
+	if	bel(Thing = 'Zerg Hatchery', baseCenter(X1, Y1, RegionId),
+			getValidConstructionSite(Agent, X2, Y2, RegionId, Thing), distanceSq(X1, Y1, X2, Y2, D12),
+			not((getValidConstructionSite(Agent, X3, Y3, RegionId, Thing), distanceSq(X1, Y1, X3, Y3, D13), D13 < D12))) then
+				insert(buildTarget(Agent, X2, Y2, RegionId)) +
+				(Agent).send!(buildTarget(X2, Y2, RegionId)).
+		
+	% A single catch-all for all other buildings
+	if	bel(chokepoint(X1, Y1, _, _, RegionId, _), 
+			getValidConstructionSite(Agent, X2, Y2, RegionId, Thing), distanceSq(X1, Y1, X2, Y2, D12),
+			not((getValidConstructionSite(Agent, X3, Y3, RegionId, Thing), distanceSq(X1, Y1, X3, Y3, D13), D13 > D12))) then
+				insert(buildTarget(Agent, X2, Y2, RegionId)) +
+				(Agent).send!(buildTarget(X2, Y2, RegionId)).
+		
+	% If no valid placement found, put it anywhere else in an existing base
+	if	bel(Thing \= 'Zerg Creep Colony', ownBase(_, _, AnyRegion), getValidConstructionSite(Agent, X1, Y1, AnyRegion, Thing)) then
+				insert(buildTarget(Agent, X1, Y1, AnyRegion)) +
+				(Agent).send!(buildTarget(X1, Y1, AnyRegion)).
+}

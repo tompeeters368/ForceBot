@@ -1,0 +1,28 @@
+use Overlord as knowledge.
+order = linearall.
+
+module OverlordInit {
+	% Self and status percepts
+	if percept(self(Id, _)), percept(status(Health, _, _, Conditions, _, X1, Y1, RegionId)) then
+		insert(status(Health, Conditions, X1, Y1, RegionId)) +
+		(overmind).send:(agent(Id)) +
+		(overmind).send?(overlordOrder(X1, Y1)).
+	
+	% General Overlord initialisation
+	if true then
+		(overmind).send?(antennae) +
+		(overmind).send?(enemyMain) +
+		subscribe(overlords).
+		
+	% Order percept
+	if percept(order(Primary, _, X1, Y1, _)) then
+		insert(order(Primary, X1, Y1)).
+	
+	% Map percept
+	if percept(map(Width, Height)) then
+		insert(map(Width, Height)).
+		
+	% Store regions
+	forall percept(region(RegionId, X1, Y1, _, _)) do
+		insert(region(RegionId, X1, Y1)).
+}

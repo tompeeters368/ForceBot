@@ -1,0 +1,10 @@
+use "../OverMind.pl" as knowledge.
+use AssignTaskToDrone as module.
+
+module TransferDroneToGas {
+	% Handle extractors that aren't fully manned
+	if bel(not(gasLock), minersGas(ExtractorId, Amount), Amount < 3, extractorRegion(ExtractorId, RegionId),
+		task(DroneId, 'gatherMinerals', RegionId), agent(DroneId, Agent)) then
+			AssignTaskToDrone(DroneId, Agent, 'gatherGas', ExtractorId, null) +
+			TransferDroneToGas. % If succesful, see if we need to transfer another
+}

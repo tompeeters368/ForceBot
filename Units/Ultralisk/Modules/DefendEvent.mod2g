@@ -1,0 +1,35 @@
+use "../Ultralisk.pl" as knowledge.
+use DefendTargetting as module.
+order = linearall.
+
+/**
+* Module for defending.
+*/
+module DefendEvent(X1, Y1) {
+	%%%%%%%%%%%%%%% --------------------------------------- Defend Decision Making --------------------------------------- %%%%%%%%%%%%%%%
+	% Detecting when to end retreating
+	if	bel(retreating),
+		bel(status(_, _, X2, Y2, _), (X2 - X1)**2 + (Y2 - Y1)**2 < 100) then
+			delete(retreating).
+			
+	% Detecting when to defend
+	if	bel(not(retreating), not(defending)),
+		percept(enemy(_, _, _, _, _, _, _, X2, Y2, _), (X2 - X1)**2 + (Y2 - Y1)**2 < 144) then
+			insert(defending).
+	% Defending end
+	if	bel(defending),
+		not(percept(enemy(_, _, _, _, _, _, _, X2, Y2, _), (X2 - X1)**2 + (Y2 - Y1)**2 < 625)) then
+			delete(defending).
+			
+	% Detecting when to start retreating
+	if	bel(not(retreating), not(defending)),
+		bel(status(_, _, X2, Y2, _), (X2 - X1)**2 + (Y2 - Y1)**2 > 100) then
+			insert(retreating).
+			
+	% Deleting existing goal
+	if	goal(target(Order, Target)), bel(not(retreating), not(defending)) then
+			drop(target(Order, Target)).
+			
+	if bel(defending) then
+		DefendTargetting(X1, Y1).
+}

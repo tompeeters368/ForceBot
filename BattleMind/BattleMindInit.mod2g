@@ -1,0 +1,36 @@
+use BattleMind as knowledge.
+order = linearall.
+
+module BattleMindInit {
+	%%%%%%%%%%%%%%% --------------------------------------- Static Percepts --------------------------------------- %%%%%%%%%%%%%%%
+	% Store all bases
+	forall percept(base(IsStart, Minerals, Gas, X, Y, RegionId)) do
+		insert(base(IsStart, Minerals, Gas, X, Y, RegionId)).
+	
+	% Store all chokepoints
+	forall percept(chokepoint(X1, Y1, X2, Y2, RegionId1, RegionId2)) do
+		insert(chokepoint(X1, Y1, X2, Y2, RegionId1, RegionId2)) +
+		insert(chokepoint(X2, Y2, X1, Y1, RegionId2, RegionId1)).
+	
+	% EnemyRace percept
+	if percept(enemyRace(Race)) then insert(enemyRace(Race)).
+	
+	% Store all regions
+	forall percept(region(RegionId, CenterX, CenterY, Height, Connections)) do
+		insert(region(RegionId, CenterX, CenterY, Height, Connections)) +
+		insert(enemySim(RegionId, 0, 0, 0, 0, 0)) +
+		insert(friendlySim(RegionId, 0, 0, 0, 0, 0)).
+		
+	% Store the 0-sim
+	if true then
+		insert(enemySim(0, 0, 0, 0, 0, 0)).
+		
+	% Store the gameframe
+	if percept(gameframe(Frame)) then
+		insert(gameframe(Frame)).
+		
+	%%%%%%%%%%%%%%% --------------------------------------- Dynamic Single Percepts --------------------------------------- %%%%%%%%%%%%%%%
+	% Resources percept (only the part we care about)
+	if percept(resources(_, _, CurrentSupply, _)) then
+		insert(resources(CurrentSupply)).
+}

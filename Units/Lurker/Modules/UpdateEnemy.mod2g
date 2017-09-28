@@ -1,0 +1,13 @@
+use "../Lurker.pl" as knowledge.
+order = linear.
+
+module UpdateEnemy(Id, Type, X, Y) {
+	% Update existing enemies
+	if bel(enemyDefense(Id, OldType, OldX, OldY)) then
+		delete(enemyDefense(Id, OldType, OldX, OldY)) +
+		insert(enemyDefense(Id, Type, X, Y)).
+		
+	% Add new enemies
+	if bel(not(enemyDefense(Id, _, _, _))) then
+		insert(enemyDefense(Id, Type, X, Y)).
+}

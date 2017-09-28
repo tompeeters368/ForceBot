@@ -1,0 +1,14 @@
+use "../Lurker.pl" as knowledge.
+order = linear.
+
+/**
+* Changes the closest enemy belief if necessary.
+*/
+module UpdateClosestEnemy(NewId, NewX, NewY, NewDistance) {
+	if bel(closestEnemy(OldId, OldX, OldY, OldDistance), NewDistance < OldDistance) then
+			delete(closestEnemy(OldId, OldX, OldY, OldDistance)) +
+			insert(closestEnemy(NewId, NewX, NewY, NewDistance)).
+		
+	if bel(not(closestEnemy(_, _, _, _))) then
+			insert(closestEnemy(NewId, NewX, NewY, NewDistance)).
+}

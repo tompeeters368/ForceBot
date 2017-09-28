@@ -1,0 +1,54 @@
+use "../OverMind.pl" as knowledge.
+use UseOpening as module.
+order = linear.
+
+module SelectOpening {
+	% Debug line
+	%if true then UseOpening('ZVU_9Pool').
+	
+	if bel(enemyRace('unknown')) then
+			UseOpening('ZVU_9Pool').
+	
+	if bel(enemyRace('zerg')) then {
+		if true then
+				UseOpening('ZVZ_9Pool').
+	}
+			
+	if bel(enemyRace('protoss')) then {
+		if bel(countStartingLocations(2)) then {
+			if bel(random(0, 3, Random), !, Random = 0) then
+				UseOpening('ZVU_9Pool').
+				
+			if true then
+				UseOpening('ZVP_5Pool').
+		}
+				
+		if bel(countStartingLocations(3)) then
+				UseOpening('ZVU_9Pool').
+				
+		if bel(random(0, 3, Random), !, Random = 0) then
+				UseOpening('ZVU_9Pool').
+				
+		if true then
+				UseOpening('ZVP_12Hatch').
+	}
+			
+	if bel(enemyRace('terran')) then {
+		if bel(countStartingLocations(2)) then {
+			if bel(random(0, 3, Random), !, Random = 0) then
+				UseOpening('ZVU_9Pool').
+				
+			if true then
+				UseOpening('ZVT_5Pool').
+		}
+				
+		if bel(countStartingLocations(3)) then
+				UseOpening('ZVU_9Pool').
+				
+		if bel(random(0, 3, Random), !, Random = 0) then
+				UseOpening('ZVU_9Pool').
+				
+		if true then
+				UseOpening('ZVT_12Hatch').
+	}
+}

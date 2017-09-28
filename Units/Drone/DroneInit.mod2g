@@ -1,0 +1,20 @@
+use Drone as knowledge.
+order = linearall.
+
+module DroneInit {	
+	if true then
+		subscribe(drones).
+		
+	% Give overmind time to start
+	if true then sleep(100).
+	
+	% Chokepoint percepts
+	forall percept(chokepoint(X1, Y1, X2, Y2, R1, R2)) do
+		insert(chokepoint(X1, Y1, X2, Y2, R1, R2)) +
+		insert(chokepoint(X2, Y2, X1, Y1, R2, R1)).
+		
+	if percept(self(Id, _), status(_, _, _, _, _, _, _, RegionId)) then
+		(overmind).send:(agent(Id)) +
+		(overmind).send?(workRequest(Id, RegionId)) +
+		insert(defenseRegion(RegionId)).
+}

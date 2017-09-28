@@ -1,0 +1,41 @@
+use "../OverMind.pl" as knowledge.
+use AttemptMorph as module.
+order = linear.
+
+/**
+* In charge of training combat units and determining attack locations.
+*/
+module FightMind {
+	% If we're not mid-construction of a Spire
+	if bel(not(underConstruction(_, 'Zerg Spire', _, _, _))) then {
+		% Extra conditions for training a Zergling
+		if	bel(not(friendly(_, 'Zerg Spire')), not(friendly(_, 'Zerg Hydralisk Den'))),
+			bel(timing(DronesRequired, Thing, _), meetsDroneCount(DronesRequired),
+			effectiveResources(Minerals, _, _, _), costs(Thing, MinC, _, _, _, _), Minerals > MinC) then
+				AttemptMorph('Zerg Zergling').	
+		
+		% If the eco mind doesn't want to do anything
+		if bel(not((timing(Amount, _, _), Amount > 0))) then{
+			%%%%%%%%%%%%%%% --------------------------------------- Unit Production Decider --------------------------------------- %%%%%%%%%%%%%%%
+			% Train up to 3 Ultralisks simultaneously
+			if bel(canCreate('Zerg Ultralisk'), producingUnit('Zerg Ultralisk', Amount), Amount < 3) then
+					AttemptMorph('Zerg Ultralisk').
+					
+			if bel(currentStrategy('Zerglings', _, _), friendly(_, 'Zerg Spawning Pool')) then
+					AttemptMorph('Zerg Zergling').
+			
+			% Train Zerglings if we don't have enough gas for more units
+			if bel((not(friendly(_, 'Zerg Spire')), not(friendly(_, 'Zerg Hydralisk Den'))) ;
+				(effectiveResources(Minerals, Gas, _, _), Minerals >= 400, Gas < 100)) then
+					AttemptMorph('Zerg Zergling').
+			
+			% Train Mutalisks if we have a Spire
+			if bel(friendly(_, 'Zerg Spire')) then
+					AttemptMorph('Zerg Mutalisk').
+			
+			% Train Hydralisks if we have a Hydralisk Den
+			if bel(friendly(_, 'Zerg Hydralisk Den')) then
+					AttemptMorph('Zerg Hydralisk').
+		}
+	}
+}

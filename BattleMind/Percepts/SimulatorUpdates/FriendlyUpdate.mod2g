@@ -1,0 +1,15 @@
+use "../../BattleMind.pl" as knowledge.
+use FriendlySimMove as module.
+order = linear.
+
+module FriendlyUpdate(Type, Vitality, RegionId, OldVitality, OldRegionId) {
+	% If the unit changed RegionId
+	if bel(RegionId \= OldRegionId) then
+			FriendlySimMove(Type, Vitality, RegionId, OldVitality, OldRegionId).
+			
+	% If only the health changed
+	if bel(friendlySim(RegionId, OGH, OAH, GD, AD, BD),
+		(isFlyingUnit(Type) -> (NGH is OGH, NAH is OAH + Vitality - OldVitality) ; (NGH is OGH + Vitality - OldVitality, NAH is OAH))) then
+			delete(friendlySim(RegionId, OGH, OAH, GD, AD, BD)) +
+			insert(friendlySim(RegionId, NGH, NAH, GD, AD, BD)).
+}

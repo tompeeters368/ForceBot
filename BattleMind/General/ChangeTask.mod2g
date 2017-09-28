@@ -1,0 +1,41 @@
+use "../BattleMind.pl" as knowledge.
+use "../Navigation/PopulateEnemyNavMap.mod2g" as module.
+order = linearall.
+
+/**
+* Handles the clearing/generating of all beliefs and sending of all messages when switching task.
+*/
+module ChangeTask(Task, X, Y, RegionId) {
+	% Delete old waypoints
+	forall bel(toEnemyWaypoint(Source, Target, Depth)) do
+		delete(toEnemyWaypoint(Source, Target, Depth)).
+		
+	% Delete regionOrders
+	forall bel(regionOrder(Source, Target, Depth)) do
+		delete(regionOrder(Source, Target, Depth)).
+		
+	% Delete old task
+	if bel(task(OldTask, OldTarget)) then
+		delete(task(OldTask, OldTarget)).
+	
+	if bel(Task = 'attack') then {
+		if true then
+			PopulateEnemyNavMap(RegionId, RegionId, 0).
+		
+		forall bel(toEnemyWaypoint(Source, Target, _)) do
+			insert(regionOrder(Source, Target, 'advance')) +
+			(fighterRegionOrders).send:(regionOrder(Source, Target, 'advance')).
+			
+		if true then
+			insert(regionOrder(RegionId, null, 'advance')) +
+			(fighterRegionOrders).send:(regionOrder(RegionId, null, 'advance')).
+	}
+	
+	if bel(Task \= 'explore') then
+		insert(task(Task, (X, Y, RegionId))) +
+		(fighterTasks).send!(task(Task, (X, Y, RegionId))).
+		
+	if bel(Task = 'explore') then
+		insert(task('explore', null)) +
+		(fighterTasks).send!(task('explore', null)).
+}

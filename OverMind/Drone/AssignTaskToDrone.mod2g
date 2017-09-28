@@ -1,0 +1,89 @@
+use "../OverMind.act2g" as actionspec.
+use "../OverMind.pl" as knowledge.
+use "../Routines/FreeResources.mod2g" as module.
+use "../Routines/SpendResources.mod2g" as module.
+order = linearall.
+
+/**
+* Clears the existing task of the given Drone (if applicable) and replaces it with the given task
+* Parameters:
+*** Id - Unit ID of the drone
+*** Agent - Agent ID of the drone
+*** NewTask - New task (i.e. 'build', 'gatherMinerals', etc.)
+*** NewTarget - New objective (i.e. a region for minerals, a building, etc.)
+*** BuildTarget - Extra parameter for placing a building in a specific region. If null, will be placed in main.
+*/
+module AssignTaskToDrone(Id, Agent, NewTask, NewTarget, BuildTarget) {
+	if bel(task(Id, OldTask, OldTarget)) then {
+		% Clear build-related beliefs and free resources
+		if bel(OldTask = 'build' ; OldTask = 'expand') then {
+			% buildMind request completed
+			if bel(NewTask = 'build', NewTarget \= 'Zerg Extractor') then
+				(buildmind).send:(buildRequestCompleted(Agent)).
+			if bel(buildTarget(Id, X, Y, BuildTarget)) then
+				delete(buildTarget(Id, X, Y, BuildTarget)).
+			if true then
+				FreeResources(OldTarget).
+		}
+		
+		% Decrement mineral drones
+		if bel(OldTask = 'gatherMinerals') then {
+			if bel(minersMinerals(OldTarget, Amount), NewAmount is Amount - 1) then
+				delete(minersMinerals(OldTarget, Amount)) +
+				insert(minersMinerals(OldTarget, NewAmount)).
+			if bel(dedicatedPatch(Id, MineralId)) then {
+				% We might not see the old mineralField anymore, so check added
+				if bel(mineralFieldN(MineralId, X, Y, OldTarget, N), NewN is N + 1) then
+					delete(mineralFieldN(MineralId, X, Y, OldTarget, N)) +
+					insert(mineralFieldN(MineralId, X, Y, OldTarget, NewN)).
+				if true then 
+					delete(dedicatedPatch(Id, MineralId)).
+			}
+		}
+		
+		% Decrement extractor drones
+		if bel(OldTask = 'gatherGas', minersGas(OldTarget, Amount), NewAmount is Amount - 1) then
+			delete(minersGas(OldTarget, Amount)) +
+			insert(minersGas(OldTarget, NewAmount)).
+			
+		% Drop existing task
+		if true then
+			delete(task(Id, OldTask, OldTarget)).
+	}
+	
+	% Reserve resources
+	if bel(NewTask = 'build' ; NewTask = 'expand') then {
+		% Request buildMind for a build location
+		if bel(NewTask = 'build', NewTarget \= 'Zerg Extractor') then
+			(buildmind).send:(buildRequest(Agent, NewTarget, BuildTarget)).
+		if true then SpendResources(NewTarget).
+	}
+	
+	% Increment mineral drones
+	if bel(NewTask = 'gatherMinerals', minersMinerals(NewTarget, Amount), NewAmount is Amount + 1) then
+		delete(minersMinerals(NewTarget, Amount)) +
+		insert(minersMinerals(NewTarget, NewAmount)).
+	
+	% Increment extractor drones
+	if bel(NewTask = 'gatherGas', minersGas(NewTarget, Amount), NewAmount is Amount + 1) then
+		delete(minersGas(NewTarget, Amount)) +
+		insert(minersGas(NewTarget, NewAmount)).
+	
+	% Adopt new task
+	if bel(NewTask = 'gatherMinerals', getBestMineralField(NewTarget, MineralId),
+			mineralFieldN(MineralId, X,Y, Region, N), NewN is N - 1) then
+		delete(mineralFieldN(MineralId, X,Y, Region, N)) +
+		insert(mineralFieldN(MineralId, X,Y, Region, NewN)) +
+		insert(dedicatedPatch(Id, MineralId)) +
+		insert(task(Id, NewTask, NewTarget)) +
+		(Agent).send!(task(NewTask, MineralId)).
+	if bel(NewTask \= 'gatherMinerals') then
+		insert(task(Id, NewTask, NewTarget)) +
+		(Agent).send!(task(NewTask, NewTarget)).
+	
+	% Debug
+	forall bel(minersMinerals(RegionId, Miners), mineralPatches(RegionId, Patches), ownBase(BaseId, _, _, RegionId)) do {
+		if bel(atomic_list_concat(['Miners: ', Miners, '/', Patches], String)) then
+			debugdraw(BaseId, String).	
+	}
+}

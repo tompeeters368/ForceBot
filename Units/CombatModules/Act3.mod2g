@@ -1,0 +1,14 @@
+use "../Generic/Generic.act2g" as actionspec.
+use ChangeTarget as knowledge.
+order = linear.
+
+/**
+* Executes the given order. Uses 3 parameters.
+*/
+module Act3(Order, X, Y) {
+	if bel(Order = 'attack') then
+		attack(X, Y).
+
+	if bel(Order = 'move') then
+		move(X, Y).
+}

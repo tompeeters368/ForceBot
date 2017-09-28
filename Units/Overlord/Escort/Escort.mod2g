@@ -1,0 +1,37 @@
+use Escort as knowledge.
+use "../Overlord.pl" as knowledge.
+use "../../CombatModules/ChangeTarget3.mod2g" as module.
+order = linear.
+
+/** 
+* Responsible for detecting nearby invisible burrowed/cloaked units
+*/
+module Escort {
+	%%%%%%%%%%%%%%% --------------------------------------- Attack Order Decision Making --------------------------------------- %%%%%%%%%%%%%%%
+	if bel(status(_, _, _, _, RegionId), regionOrder(RegionId, Target, Order)) then {
+		if bel(Order \= 'retreat') then {
+			% Move to closest invisible enemy unit
+			if	percept(enemy(_, _, _, _, _, C2, _, X2, Y2, R2)), bel(not(regionOrder(R2, _, 'retreat')),
+				(member(cloaked, C2) ; member(burrowed, C2)), getDetectPoint(X2, Y2, X3, Y3)) then
+					ChangeTarget3('move', X3, Y3).
+					
+			% Move to next region if next is advance
+			if	bel(regionOrder(Target, _, 'advance'), region(Target, X2, Y2)) then
+					ChangeTarget3('move', X2, Y2).
+					
+			% Move to center of current region if nothing else
+			if	bel(region(RegionId, X2, Y2)) then
+					ChangeTarget3('move', X2, Y2).
+			
+			% If we're not currently in any valid region, move to the base
+			if	bel(RegionId = 0, ownMain(X2, Y2, _)) then
+					ChangeTarget3('move', X2, Y2).
+		}
+		
+		% Retreat if it is the current order
+		if bel (Order = 'retreat') then {
+			if	bel(region(Target, X2, Y2)) then
+					ChangeTarget3('move', X2, Y2).
+		}
+	}
+}

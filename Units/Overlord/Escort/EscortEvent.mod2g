@@ -1,0 +1,21 @@
+use Escort as knowledge.
+use "../Overlord.pl" as knowledge.
+order = linearall.
+
+/** 
+* Responsible for detecting nearby invisible burrowed/cloaked units
+*/
+module EscortEvent {
+	% Processing the regionOrders
+	forall (_).sent:(regionOrder(Source, Target, Order)) do {
+		if bel(regionOrder(Source, OldTarget, OldOrder)) then
+			delete(regionOrder(Source, OldTarget, OldOrder)).
+		
+		if true then
+			insert(regionOrder(Source, Target, Order)).
+	}
+	
+	% Processing ownMain
+	if (_).sent:(ownMain(X1, Y1, RegionId)) then
+		insert(ownMain(X1, Y1, RegionId)).
+}

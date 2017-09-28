@@ -1,0 +1,57 @@
+use BackDoor as knowledge.
+use "../../CombatModules/ChangeTarget3.mod2g" as module.
+order = linearall.
+
+module BackDoor(X, Y) {
+	
+	%%%% Another task was started, so remove all module specific beliefs/goals
+	if not(goal(task('backdoor', _))) then {
+		% delete all module related beliefs and goals
+		forall bel(stage(I))
+			do delete(stage(I)).
+		if bel(waypointsIndex(I), waypoints(L))
+			then delete(waypointsIndex(I), waypoints(L)).
+	}
+	
+	%%%% Stage initial, Preparing mental state
+	if bel(not(stage(_)), map(_, _)) then {
+		if true then insert(stage(0)).
+		if bel(getRouteTo(point(X, Y), L, _), append(L, [point(X,Y)], List)) 
+			then insert(waypoints(List), waypointsIndex(0)).
+	}
+	
+	%%%% Stage 0, Setting next waypoint as goal
+	if goal(task('backdoor', _)), bel(stage(0)) then { 
+		if bel(nextPoint(point(Xi, Yi)))  
+			then delete(stage(0)) +
+			insert(stage(1)) +
+			ChangeTarget3('move', Xi, Yi).
+	}
+	
+	%%%% Stage 1, Completing the current waypoint
+	if goal(task('backdoor', _)), bel(stage(1)) then {
+		% if we actually are at our waypoint destination 
+		if bel(nextPoint(P), distance(P,D), D < 3.5) then {
+			if bel(waypointsIndex(I), N is I+1)
+				then delete(stage(1), waypointsIndex(I)) +
+				insert(stage(0), waypointsIndex(N)).
+		}
+	}
+	
+	%%%% Delete the order when we are finished
+	if bel(waypoints(List), length(List, Length), waypointsIndex(Index), Index is Length) then {
+		
+		% Clear waypoints.
+		if true then delete(waypoints(List), waypointsIndex(Index)).
+		
+		% Clear stages.
+		if bel(stage(Stage))
+			then delete(stage(Stage)).
+		
+		% Clear order.
+		if goal(task('backdoor', (X, Y)))
+			then drop(task('backdoor', (X, Y))).
+	}
+	
+}
+

@@ -1,0 +1,20 @@
+use "../BattleMind.pl" as knowledge.
+use AttackFlowsContinue as module.
+use AttackFlowsEnd as module.
+
+/**
+* The commander determines how to accomplish the task.
+*/
+module Commander {
+	if bel(not(simDisabled)) then {
+		forall bel(region(Source, _, _, _, _)) do {
+			if bel(toEnemyWaypoint(Source, Target, _)) then
+				AttackFlowsContinue(Source, Target).
+			if bel(not(toEnemyWaypoint(Source, _, _))) then
+				AttackFlowsEnd(Source).
+		}
+	}
+
+	forall (Agent).sent?(regionOrders), bel(regionOrder(Source, Target, Order)) do
+		(Agent).send:(regionOrder(Source, Target, Order)).
+}

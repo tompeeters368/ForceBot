@@ -1,0 +1,13 @@
+use Generic as knowledge.
+use Generic as actionspec.
+order = linear.
+
+module Generic {
+	if goal(researching(Thing)) then
+			research(Thing) +
+			sleep(100).
+			
+	if goal(morphing(Thing)) then
+			morph(Thing) +
+			sleep(100).
+}

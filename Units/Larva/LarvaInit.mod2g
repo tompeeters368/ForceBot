@@ -1,0 +1,8 @@
+use Larva as actionspec.
+use Larva as knowledge.
+order = linearall.
+
+module LarvaInit {	
+	if percept(self(Id, _)), percept(status(_, _, _, _, _, _, _, RegionId)) then
+		(overmind).send:(larva(Id, RegionId)).
+}

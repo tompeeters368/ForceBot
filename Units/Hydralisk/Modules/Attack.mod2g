@@ -1,0 +1,40 @@
+use "../Hydralisk.pl" as knowledge.
+use "../../CombatModules/ChangeTarget2.mod2g" as module.
+use "../../CombatModules/ChangeTarget3.mod2g" as module.
+order = linear.
+
+/**
+* In charge of determining what to attack next.
+*/
+module Attack {
+	%%%%%%%%%%%%%%% --------------------------------------- Attack Order Decision Making --------------------------------------- %%%%%%%%%%%%%%%
+	if bel(status(_, _, _, _, RegionId), regionOrder(RegionId, Target, Order)) then {
+		if bel(Order \= 'retreat') then {
+			% Attack closest threatening enemy according to priorities
+			%if bel(closestEnemy(Id, _, _, _, 1)) then
+			%	ChangeTarget2('attack', Id).
+				
+			% Attack move to closest non-threatening enemy according to priorities
+			%if bel(closestEnemy(_, _, X1, Y1, 2)) then
+			%	ChangeTarget3('attack', X1, Y1).
+			if bel(closestEnemy(_, X1, Y1, _, _)) then
+				ChangeTarget3('attack', X1, Y1).
+
+			% Attack next region if next is not retreat
+			if bel(regionOrder(Target, _, TargetOrder), TargetOrder \= 'retreat', region(Target, X2, Y2)) then
+					ChangeTarget3('attack', X2, Y2).
+					
+			% Move to attack point if in the final region
+			if bel(Target = null), goal(task('attack', (X2, Y2, _))) then
+					ChangeTarget3('attack', X2, Y2).
+					
+			% Move to center of current region if nothing else
+			if bel(region(RegionId, X2, Y2)) then
+					ChangeTarget3('move', X2, Y2).
+		}
+		
+		% Retreat if it is the current order
+		if bel(region(Target, X1, Y1)) then
+				ChangeTarget3('move', X1, Y1).
+	}
+}

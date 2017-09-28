@@ -1,0 +1,14 @@
+use Zergling as knowledge.
+use Modules.Attack as module.
+use Modules.Explore as module.
+use Modules.Defend as module.
+use Modules.Suicide as module.
+order = linear.
+
+module Zergling {
+	% Determining which module to run
+	if goal(task('attack', _)) then Attack.
+	if goal(task('explore', _)) then Explore.
+	if goal(task('defend', (X1, Y1, _))) then Defend(X1, Y1).
+	if goal(task('suicide', _)) then Suicide.
+}

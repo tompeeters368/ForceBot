@@ -1,0 +1,15 @@
+use ChangeTarget as knowledge.
+order = linear.
+
+/**
+* Changes the closest enemy belief if necessary.
+*/
+module UpdateClosest(NewId, NewX, NewY, NewDistance, NewPriority) {
+	if bel(closestEnemy(OldId, OldX, OldY, OldDistance, OldPriority),
+		((NewDistance < OldDistance, NewPriority = OldPriority) ; NewPriority < OldPriority)) then
+			delete(closestEnemy(OldId, OldX, OldY, OldDistance, OldPriority)) +
+			insert(closestEnemy(NewId, NewX, NewY, NewDistance, NewPriority)).
+		
+	if bel(not(closestEnemy(_, _, _, _, _))) then
+			insert(closestEnemy(NewId, NewX, NewY, NewDistance, NewPriority)).
+}

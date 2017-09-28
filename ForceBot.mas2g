@@ -1,0 +1,165 @@
+use "connector.jar" as environment with
+%	map="(2)Benzene.scx",
+%	map="(2)Destination.scx",
+%	map="(2)Heartbreak Ridge.scx",
+%	map="(3)Tau Cross.scx",
+	map="(4)Circuit Breaker.scx",
+%	map="(4)Fighting Spirit.scx",
+	own_race="Zerg",
+	starcraft_location="C:\Starcraft",
+	debug="true",
+	auto_menu="Single_Player",
+	enemy_race="protoss",
+	game_speed=50,
+	managers=3,
+	percepts=
+	[
+	[manager1,				base, chokepoint, enemyRace, map, region, friendly, gameframe, mineralField, resources, underConstruction, vespeneGeyser],
+	[manager2,				base, chokepoint, enemyRace, region, enemy, gameframe, friendly, gameframe, resources],
+	[manager3,				base, chokepoint, region, constructionSite, gameframe, mineralField, vespeneGeyser],
+
+	[zergLarva				],
+	[zergDrone,				chokepoint, region, enemy],
+	[zergOverlord,			map, region, enemy],
+	[zergZergling,			map, region, enemy],
+	[zergHydralisk,			map, region, enemy],
+	[zergLurker,			map, enemy],
+	[zergMutalisk,			map, region, enemy],
+	[zergUltralisk,			map, region, enemy],
+
+	[zergHatchery			],
+	[zergLair				],
+	[zergHive				],
+	
+	[zergSunkenColony		],
+	[zergSporeColony		],
+
+	[zergCreepColony		],
+	[zergDefilerMound		],
+	[zergEvolutionChamber	],
+	[zergExtractor			],
+	[zergGreaterSpire		],
+	[zergHydraliskDen		],
+	[zergNydusCanal			],
+	[zergQueensNest			],
+	[zergSpawningPool		],
+	[zergSpire				],
+	[zergUltraliskCavern	]
+	]
+.
+
+define overmind as agent {
+	use OverMind.OverMindInit as init module.
+	use OverMind.OverMind as event module.
+}
+
+define battlemind as agent {
+	use BattleMind.BattleMindInit as init module.
+	use BattleMind.BattleMind as event module.
+}
+
+define buildmind as agent {
+	use BuildMind.BuildMindInit as init module.
+	use BuildMind.BuildMind as event module.
+}
+
+define larva as agent {
+	use Units.Larva.Larva as main module.
+	use Units.Larva.LarvaInit as init module.
+	use Units.Larva.LarvaEvent as event module.
+}
+
+define drone as agent {
+	use Units.Drone.Drone as main module.
+	use Units.Drone.DroneInit as init module.
+	use Units.Drone.DroneEvent as event module.
+}
+
+define overlord as agent {
+	use Units.Overlord.Overlord as main module.
+	use Units.Overlord.OverlordInit as init module.
+	use Units.Overlord.OverlordEvent as event module.
+}
+
+define zergling as agent {
+	use Units.Zergling.Zergling as main module.
+	use Units.Zergling.ZerglingInit as init module.
+	use Units.Zergling.ZerglingEvent as event module.
+}
+
+define hydralisk as agent {
+	use Units.Hydralisk.Hydralisk as main module.
+	use Units.Hydralisk.HydraliskInit as init module.
+	use Units.Hydralisk.HydraliskEvent as event module.
+}
+
+define lurker as agent {
+	use Units.Lurker.Lurker as main module.
+	use Units.Lurker.LurkerInit as init module.
+	use Units.Lurker.LurkerEvent as event module.
+}
+
+define mutalisk as agent {
+	use Units.Mutalisk.Mutalisk as main module.
+	use Units.Mutalisk.MutaliskInit as init module.
+	use Units.Mutalisk.MutaliskEvent as event module.
+}
+
+define ultralisk as agent {
+	use Units.Ultralisk.Ultralisk as main module.
+	use Units.Ultralisk.UltraliskInit as init module.
+	use Units.Ultralisk.UltraliskEvent as event module.
+}
+
+define hatchery as agent {
+	use Structures.Generic.Generic as main module.
+	use Structures.Hatchery.HatcheryInit as init module.
+	use Structures.Generic.GenericEvent as event module.
+}
+
+define extractor as agent {
+	use Structures.Generic.Generic as main module.
+	use Structures.Extractor.ExtractorInit as init module.
+	use Structures.Generic.GenericEvent as event module.
+}
+
+define structure as agent {
+	use Structures.Generic.Generic as main module.
+	use Structures.Generic.GenericInit as init module.
+	use Structures.Generic.GenericEvent as event module.
+}
+
+launchpolicy{
+	when type = manager1 launch overmind.
+	when type = manager2 launch battlemind.
+	when type = manager3 launch buildmind.
+	
+	when type = zergLarva launch larva.
+	when type = zergDrone launch drone.
+	when type = zergOverlord launch overlord.
+	when type = zergZergling launch zergling.
+	when type = zergHydralisk launch hydralisk.
+	when type = zergLurker launch lurker.
+	when type = zergMutalisk launch mutalisk.
+	when type = zergUltralisk launch ultralisk.
+	
+	when type = zergHatchery launch hatchery.
+	when type = zergLair launch hatchery.
+	when type = zergHive launch hatchery.
+	
+	when type = zergExtractor launch extractor.
+	
+	when type = zergSunkenColony launch structure.
+	when type = zergSporeColony launch structure.
+	
+	when type = zergCreepColony launch structure.
+	when type = zergDefilerMound launch structure.
+	when type = zergEvolutionChamber launch structure.
+	when type = zergGreaterSpire launch structure.
+	when type = zergHydraliskDen launch structure.
+	when type = zergNydusCanal launch structure.
+	when type = zergQueensNest launch structure.
+	when type = zergSpawningPool launch structure.
+	when type = zergSpire launch structure.
+	when type = zergUltraliskCavern launch structure.
+}

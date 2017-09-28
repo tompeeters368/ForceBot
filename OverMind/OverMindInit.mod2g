@@ -1,0 +1,75 @@
+use OverMind as knowledge.
+use Strategy.SelectOpening as module.
+order = linearall.
+
+module OverMindInit {
+	%%%%%%%%%%%%%%% --------------------------------------- Static Percepts --------------------------------------- %%%%%%%%%%%%%%%
+	forall percept(base(IsStart, Minerals, Gas, X, Y, RegionId)) do
+		insert(base(IsStart, Minerals, Gas, X, Y, RegionId)) +
+		insert(scout(X, Y, RegionId)).
+		
+	forall percept(chokepoint(X1, Y1, X2, Y2, RegionId1, RegionId2)) do
+		insert(chokepoint(X1, Y1, X2, Y2, RegionId1, RegionId2)) +
+		insert(chokepoint(X2, Y2, X1, Y1, RegionId2, RegionId1)).
+		
+	if percept(enemyRace(Race)) then insert(enemyRace(Race)).
+	
+	if percept(map(Width, Height)) then insert(map(Width, Height)).
+	
+	forall percept(region(RegionId, CenterX, CenterY, Height, Connections)) do
+		insert(region(RegionId, CenterX, CenterY, Height, Connections)).
+		
+	%%%%%%%%%%%%%%% --------------------------------------- Dynamic Single Percepts --------------------------------------- %%%%%%%%%%%%%%%
+	if percept(gameframe(Frame)) then
+		insert(gameframe(Frame)) +
+		insert(sliceSmall(Frame)) +
+		insert(sliceLarge(Frame)).
+		
+	if percept(resources(Minerals, Gas, CurrentSupply, TotalSupply)) then
+		insert(resources(Minerals, Gas, CurrentSupply, TotalSupply)).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Initial Data Beliefs --------------------------------------- %%%%%%%%%%%%%%%
+	% Initialise producingUnits
+	if true then
+		insert(producingUnit('Zerg Devourer', 0)) +
+		insert(producingUnit('Zerg Drone', 0)) +
+		insert(producingUnit('Zerg Guardian', 0)) +
+		insert(producingUnit('Zerg Hydralisk', 0)) +
+		insert(producingUnit('Zerg Lurker', 0)) +
+		insert(producingUnit('Zerg Mutalisk', 0)) +
+		insert(producingUnit('Zerg Overlord', 0)) +
+		insert(producingUnit('Zerg Queen', 0)) +
+		insert(producingUnit('Zerg Scourge', 0)) +
+		insert(producingUnit('Zerg Ultralisk', 0)) +
+		insert(producingUnit('Zerg Zergling', 0)).
+		
+	% Initialise unitAmounts
+	if true then
+		insert(unitAmount('Zerg Devourer', 0)) +
+		insert(unitAmount('Zerg Drone', 0)) +
+		insert(unitAmount('Zerg Guardian', 0)) +
+		insert(unitAmount('Zerg Hydralisk', 0)) +
+		insert(unitAmount('Zerg Lurker', 0)) +
+		insert(unitAmount('Zerg Mutalisk', 0)) +
+		insert(unitAmount('Zerg Overlord', 0)) +
+		insert(unitAmount('Zerg Queen', 0)) +
+		insert(unitAmount('Zerg Scourge', 0)) +
+		insert(unitAmount('Zerg Ultralisk', 0)) +
+		insert(unitAmount('Zerg Zergling', 0)).
+		
+	% Initialise repeatable research levels
+	if true then
+		insert(researchLevel('Zerg Melee Attacks', 0)) +
+		insert(researchLevel('Zerg Missile Attacks', 0)) +
+		insert(researchLevel('Zerg Carapace', 0)) +
+		insert(researchLevel('Zerg Flyer Attacks', 0)) +
+		insert(researchLevel('Zerg Flyer Carapace', 0)).
+	
+	if true then
+		insert(costOverhead(0, 0)) +
+		insert(numberOfBases(0)) +
+		insert(numberOfHatcheries(1)).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Selecting Opening --------------------------------------- %%%%%%%%%%%%%%%
+	if true then SelectOpening.
+}

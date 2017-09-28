@@ -1,0 +1,87 @@
+use Drone as actionspec.
+use Drone as knowledge.
+use DroneDefense as module.
+use UpdateStatus as module.
+order = linearall.
+
+module DroneEvent {		
+	%%%%%%%%%%%%%%% --------------------------------------- Messaging --------------------------------------- %%%%%%%%%%%%%%%
+	% Handle receiving a task
+	forall (_).sent!(task(Task, Target)) do {
+		% Delete existing buildTarget
+		if bel(buildTarget(X, Y, RegionId)) then
+			delete(buildTarget(X, Y, RegionId)).
+		
+		% Drop existing task
+		if goal(task(OldTask, OldTarget)) then
+			drop(task(OldTask, OldTarget)).
+		
+		% Discover where we're mining
+		if bel(Task = 'gatherMinerals', not(mineralRegion(Target, _))) then
+			(overmind).send?(mineralRegion(Target)).
+			
+		% If we are to gather gas, we must first stop
+		if bel(Task = 'gatherMinerals' ; Task = 'gatherGas') then
+			adopt(idle).
+			
+		if bel(Task = 'expand') then
+			(overmind).send?(mineralBlocks) +
+			subscribe(expanders).
+			
+		% Adopt the new task
+		if true then
+			adopt(task(Task, Target)).
+			
+		if bel(Task = 'gatherMinerals') then
+			gather(Target).
+		
+		% Debug drawing
+		%if bel(Task = 'gatherMinerals') then debugdraw('M').
+		%if bel(Task = 'gatherGas') then debugdraw('G').
+		%if bel(Task = 'build') then debugdraw(Target).
+		%if bel(Task = 'expand') then debugdraw('Expand').
+	}
+	
+	% Store received mineralRegions
+	forall (_).sent:(mineralRegion(MineralId, RegionId)) do
+		insert(mineralRegion(MineralId, RegionId)).
+	
+	% Store received buildTargets
+	forall (_).sent!(buildTarget(X, Y, RegionId)) do {
+		if bel(buildTarget(OldX, OldY, OldRegionId)) then
+			delete(buildTarget(OldX, OldY, OldRegionId)).
+			
+		if true then
+			insert(buildTarget(X, Y, RegionId)).
+	}	
+	
+	% Handle received mineralBlocks
+	forall (_).sent:(mineralBlock(MineralId, X, Y, RegionId)) do
+		insert(mineralBlock(MineralId, X, Y, RegionId)).
+	forall (_).sent:(not(mineralBlock(MineralId))), bel(mineralBlock(MineralId, X, Y, RegionId)) do
+		delete(mineralBlock(MineralId, X, Y, RegionId)).
+		
+	%%%%%%%%%%%%%%% --------------------------------------- Percept storing --------------------------------------- %%%%%%%%%%%%%%%
+	if goal(task(Task, _), (Task = 'build' ; Task = 'expand')),
+		percept(status(Health, _, _, Conditions, _, X1, Y1, RegionId)) then
+			UpdateStatus(Health, Conditions, X1, Y1, RegionId).
+	
+	%if percept(status(Health, _, _, Conditions, _, X1, Y1, RegionId)),
+	%	bel(not(status(Health, Conditions, X1, Y1, RegionId)), status(OldHealth, OldConditions, OldX1, OldY1, OldRegionId)) then
+	%		delete(status(OldHealth, OldConditions, OldX1, OldY1, OldRegionId)) +
+	%		insert(status(Health, Conditions, X1, Y1, RegionId)).
+		
+	%%%%%%%%%%%%%%% --------------------------------------- Goals --------------------------------------- %%%%%%%%%%%%%%%
+	% Drop the idle goal once we're idle
+	if	goal(idle), percept(status(_, _, _, Cond, _, _, _, _), member(idle, Cond), not(member(moving, Cond)), not(member(gathering, Cond))) then
+			drop(idle).
+	
+	% Drop the clearingBlock belief once it is gone
+	if	bel(clearingBlock(MineralId), not(mineralBlock(MineralId, _, _, _))) then
+			delete(clearingBlock(MineralId)).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Defending --------------------------------------- %%%%%%%%%%%%%%%
+	% Run DroneDefense if it's not disabled
+	if bel(not(disableDroneDefense)) then
+		DroneDefense.
+}

@@ -1,0 +1,13 @@
+use "../OverMind.pl" as knowledge.
+use "../Routines/Morph.mod2g" as module.
+use FightMind as module.
+
+/**
+* Attempts to train the given thing.
+* If succesful, calls the FightMind to see if another unit can be trained.
+*/
+module AttemptMorph(Thing) {
+	if bel(canCreate(Thing), larva(Id, Agent, _), not(morphing(Id, _))) then
+		Morph(Id, Agent, Thing) +
+		FightMind.
+}

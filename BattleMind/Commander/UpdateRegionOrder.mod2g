@@ -1,0 +1,13 @@
+use "../BattleMind.act2g" as actionspec.
+use "../BattleMind.pl" as knowledge.
+order = linear.
+
+/**
+* Updates the order in a region to the given values
+*/
+module UpdateRegionOrder(Source, Target, Order) {
+	if bel(not(regionOrder(Source, Target, Order)), regionOrder(Source, OldTarget, OldOrder)) then
+			delete(regionOrder(Source, OldTarget, OldOrder)) +
+			insert(regionOrder(Source, Target, Order)) +
+			(fighterRegionOrders).send:(regionOrder(Source, Target, Order)).
+}

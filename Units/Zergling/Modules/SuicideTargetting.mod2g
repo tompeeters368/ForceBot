@@ -1,0 +1,33 @@
+use "../Zergling.pl" as knowledge.
+use Suicide as knowledge.
+use "../../CombatModules/UpdateClosest.mod2g" as module.
+order = linear.
+
+/**
+* In charge of decision making for the Suicide subroutine
+*/
+module SuicideTargetting {
+	if bel(not(enemyMain(_, _, _)), status(_, _, X1, Y1, _)) then {
+		% Attack closest threatening unit
+		forall percept(enemy(Id, T2, _, _, _, _, _, X2, Y2, R2)),
+			bel(isGroundUnit(T2), base(_, _, R2), distanceSq(X1, Y1, X2, Y2, D12)) do
+				UpdateClosest(Id, X2, Y2, D12, 1).
+				
+		% Attack non-threatening unit
+		forall percept(enemy(Id, T2, _, _, _, C2, _, X2, Y2, R2)),
+			bel(isBuilding(T2), not(member(flying, C2)), base(_, _, R2), distanceSq(X1, Y1, X2, Y2, D12)) do
+				UpdateClosest(Id, X2, Y2, D12, 2).
+	}
+	
+	if bel(enemyMain(_, _, BaseId), status(_, _, X1, Y1, _)) then {
+		% Attack closest threatening unit
+		forall percept(enemy(Id, T2, _, _, _, _, _, X2, Y2, BaseId)),
+			bel(isGroundUnit(T2), distanceSq(X1, Y1, X2, Y2, D12)) do
+				UpdateClosest(Id, X2, Y2, D12, 1).
+				
+		% Attack closest threatening unit
+		forall percept(enemy(Id, _, _, _, _, _, _, X2, Y2, BaseId)),
+			bel(distanceSq(X1, Y1, X2, Y2, D12)) do
+				UpdateClosest(Id, X2, Y2, D12, 2).
+	}
+}

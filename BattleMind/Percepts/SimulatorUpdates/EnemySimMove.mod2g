@@ -1,0 +1,15 @@
+use "../../BattleMind.pl" as knowledge.
+order = linearall.
+
+module EnemySimMove(Type, Vitality, RegionId, OldType, OldVitality, OldRegionId) {
+	if bel(enemySim(OldRegionId, OGH, OAH, OGD, OAD, OBD),
+		removeSim(OldType, OldVitality, OGH, OAH, OGD, OAD, OBD, NGH, NAH, NGD, NAD, NBD)) then
+			delete(enemySim(OldRegionId, OGH, OAH, OGD, OAD, OBD)) +
+			insert(enemySim(OldRegionId, NGH, NAH, NGD, NAD, NBD)).
+			
+	% Insert values for new region
+	if bel(enemySim(RegionId, OGH, OAH, OGD, OAD, OBD),
+		addSim(Type, Vitality, OGH, OAH, OGD, OAD, OBD, NGH, NAH, NGD, NAD, NBD)) then
+			delete(enemySim(RegionId, OGH, OAH, OGD, OAD, OBD)) +
+			insert(enemySim(RegionId, NGH, NAH, NGD, NAD, NBD)).
+}

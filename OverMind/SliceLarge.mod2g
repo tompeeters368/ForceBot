@@ -1,0 +1,56 @@
+use OverMind as knowledge.
+use Drone.DetermineInitialTask as module.
+use Drone.TransferDroneToBase as module.
+use Drone.TransferDroneToGas as module.
+use Research.ResearchMind as module.
+use Strategy.ChangeStrategy as module.
+use Strategy.RequirementsController as module.
+
+module SliceLarge(OldFrame, NewFrame) {
+	if true then
+		TransferDroneToGas +
+		TransferDroneToBase +
+		ResearchMind(NewFrame) +
+		RequirementsController.
+	
+	% If any mineral field that has drones assigned to it disappears, assign them to new ones
+	forall bel(dedicatedPatch(Id, MineralId)), not(percept(mineralField(MineralId, _, _, _, _))), bel(task(Id, _, RegionId), agent(Id, Agent)) do
+		DetermineInitialTask(Id, Agent, RegionId).
+		
+	%%%%%%%%%%%%%%% --------------------------------------- Time-based decisions --------------------------------------- %%%%%%%%%%%%%%%
+	% Expand at 8000 frames if haven't already
+	% Expand earlier if going for Speedlings
+	if bel(OldFrame < 7000, NewFrame >= 7000, currentStrategy('Zerglings', _, _), ownNatural(X1, Y1, RegionId), getValidExpansion(X1, Y1, RegionId, true)) then
+		insert(timing(0, 'Zerg Hatchery', 'expand')).
+		
+	% Expand at a timely fashion
+	if bel(OldFrame < 8000, NewFrame >= 8000, not(openingUsed('ZVP_5Pool')), not(openingUsed('ZVT_5Pool')),
+		ownNatural(X1, Y1, RegionId), getValidExpansion(X1, Y1, RegionId, true)) then
+		insert(timing(0, 'Zerg Hatchery', 'expand')).
+		
+	% Because gameframe may skip frames, we need to do some advanced checks to see when we pass a certain number
+	if bel(NewFrame >= 12000, M1 is mod(NewFrame, 2000), M2 is mod(OldFrame, 2000), M1 < M2, getValidExpansion(_, _, _, _)) then
+		insert(timing(0, 'Zerg Hatchery', 'expand')).
+		
+	% At 5000 frames tell the workers to stop defending
+	if bel(OldFrame < 5000, NewFrame >= 5000) then
+		(drones).send!(disableDroneDefense).
+		
+	% At 5000 frames tell the workers to stop defending
+	if bel(NewFrame > 11000, currentStrategy('Hydralisks', _, _)) then
+		ChangeStrategy('HydraLurker').
+		
+	% At 5000 frames tell the workers to stop defending
+	if bel(currentStrategy('Zerglings', _, _)) then {
+		if bel(NewFrame > 6000, gasLock) then
+			delete(gasLock).
+		
+		% Hard timeout
+		if bel(enemyRace('protoss'), researchLevel('Metabolic Boost', 1), effectiveResources(_, Gas, _, _), Gas >= 100) then
+			ChangeStrategy('HydraLurker').
+		if bel(enemyRace('terran'), researchLevel('Metabolic Boost', 1), effectiveResources(_, Gas, _, _), Gas >= 100) then
+			ChangeStrategy('HydraLurker').
+		if bel(enemyRace('zerg'), researchLevel('Metabolic Boost', 1), effectiveResources(_, Gas, _, _), Gas >= 100) then
+			ChangeStrategy('Mutalisks').
+	}
+}

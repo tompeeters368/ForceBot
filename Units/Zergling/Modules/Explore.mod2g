@@ -1,0 +1,18 @@
+use "../Zergling.pl" as knowledge.
+use "../../CombatModules/ChangeTarget3.mod2g" as module.
+order = linear.
+
+/**
+* Module in charge of going to last seen enemy locations (or random otherwise) to explore.
+*/
+module Explore {
+	%%%%%%%%%%%%%%% --------------------------------------- Explore Order Decision Making --------------------------------------- %%%%%%%%%%%%%%%
+	% Attacking enemies
+	if	percept(enemy(Id1, _, _, _, _, _, _, X1, Y1, _)), not(percept(enemy(Id2, _, _, _, _, _, _, _, _, _), Id2 < Id1)) then
+			ChangeTarget3('attack', X1, Y1).
+	
+	% Moving to random places
+	if	bel(status(_, Conditions, _, _, _), not(member(moving, Conditions)),
+		map(Width, Height), random(0, Width, X1), random(0, Height, Y1)) then
+			ChangeTarget3('attack', X1, Y1).
+}

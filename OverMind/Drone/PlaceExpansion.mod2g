@@ -1,0 +1,26 @@
+use "../OverMind.pl" as knowledge.
+order = linear.
+
+/**
+* Determine the optimal location for the agent to place an expansion.
+*/
+module PlaceExpansion(Id, Agent) {
+	% Natural expansion
+	if	bel(ownNatural(X1, Y1, RegionId), getValidExpansion(X1, Y1, RegionId, true)) then
+				insert(buildTarget(Id, X1, Y1, RegionId)) +
+				(Agent).send!(buildTarget(X1, Y1, RegionId)).
+	
+	% Expand to nearest empty base with gas
+	if	bel(ownMain(X1, Y1, _), getValidExpansion(X2, Y2, RegionId, true), distanceSq(X1, Y1, X2, Y2, D12),
+			not((getValidExpansion(X3, Y3, _, true), distanceSq(X1, Y1, X3, Y3, D13), D13 < D12))) then
+				insert(buildTarget(Id, X2, Y2, RegionId)) +
+				(Agent).send!(buildTarget(X2, Y2, RegionId)).
+	
+	% Expand to nearest empty base without gas
+	if	bel(ownMain(X1, Y1, _), getValidExpansion(X2, Y2, RegionId, false), distanceSq(X1, Y1, X2, Y2, D12),
+			not((getValidExpansion(X3, Y3, _, false), distanceSq(X1, Y1, X3, Y3, D13), D13 < D12))) then
+				insert(buildTarget(Id, X2, Y2, RegionId)) +
+				(Agent).send!(buildTarget(X2, Y2, RegionId)).
+	
+	% TODO: Call off expansion if it reaches here? It should never reach here anyway
+}

@@ -1,0 +1,68 @@
+use Overlord as knowledge.
+use Escort.EscortEvent as module.
+use Escort.EscortInit as module.
+order = linearall.
+
+module OverlordEvent {
+	%%%%%%%%%%%%%%% --------------------------------------- Shared Actions --------------------------------------- %%%%%%%%%%%%%%%
+	if (_).sent:(antennae) then {
+		forall bel(watchPoint(X1, Y1, X2, Y2)) do
+			delete(watchPoint(X1, Y1, X2, Y2)).
+		if true then
+			insert(antennae).
+	}
+	
+	% Main locations
+	if (_).sent:(enemyMain(X1, Y1, RegionId)), not(bel(enemyMain(X1, Y1, RegionId))) then
+		insert(enemyMain(X1, Y1, RegionId)).
+	
+	% Status updating
+	if percept(status(Health, _, _, Conditions, _, X, Y, RegionId)),
+		bel(not(status(Health, Conditions, X, Y, RegionId)), status(OldHealth, OldConditions, OldX, OldY, OldRegionId)) then
+			delete(status(OldHealth, OldConditions, OldX, OldY, OldRegionId)) +
+			insert(status(Health, Conditions, X, Y, RegionId)).
+			
+	% Order updating
+	if percept(order(Primary, _, X1, Y1, _)), bel(order(OldPrimary, X2, Y2)) then
+		delete(order(OldPrimary, X2, Y2)) +
+		insert(order(Primary, X1, Y1)).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Goal Updating --------------------------------------- %%%%%%%%%%%%%%%
+	%% Drop existing goals
+	forall (_).sent!(task(Order, Target)) do {
+		if goal(task(OldOrder, OldTarget)) then
+				drop(task(OldOrder, OldTarget)).
+				
+		if bel(Order = 'escort') then
+			EscortInit.
+		
+		% Adopt new goal
+		if true then
+			adopt(task(Order, Target)).
+	}
+	
+	% Drop scouting order when we've arrived
+	if goal(task('scout', (X1, Y1, RegionId))), percept(status(_, _, _, _, _, X2, Y2, _)), bel(distanceSq(X1, Y1, X2, Y2, D12), D12 < 81) then
+		drop(task('scout', (X1, Y1, RegionId))) +
+		(overmind).send?(overlordOrder(X1, Y1)) +
+		(battlemind).send:(cleared(X1, Y1)).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Module Decision --------------------------------------- %%%%%%%%%%%%%%%
+	% When tasked with escorting
+	if goal(task('escort', _)) then EscortEvent.
+		
+	% When not escorting
+	if not(goal(task('escort', _))) then {		
+		%%%%%%%%%%%%%%% --------------------------------------- Enemy Base Spotting --------------------------------------- %%%%%%%%%%%%%%%
+		if goal(task(Order, (X1, Y1, RegionId))), bel((Order = 'scout' ; Order = 'watch')) then {
+			if percept(enemy(_, Type, _, _, _, _, _, _, _, RegionId)), bel(isBuilding(Type), status(_, _, X2, Y2, _)) then
+				drop(task(Order, (X1, Y1, RegionId))) +
+				(overmind).send:(enemyBase(X1, Y1, RegionId)) +
+				(overmind).send?(overlordOrder(X2, Y2)).
+		}
+		
+		%%%%%%%%%%%%%%% --------------------------------------- Watch Position Calculation --------------------------------------- %%%%%%%%%%%%%%%	
+		if goal(task('watch', (X1, Y1, _))), bel(not(watchPoint(X1, Y1, _, _)), getWatchPoint(X1, Y1, X2, Y2)) then
+			insert(watchPoint(X1, Y1, X2, Y2)).
+	}
+}

@@ -1,0 +1,22 @@
+use "../BattleMind.pl" as knowledge.
+order = linear.
+
+/**
+* Generates the waypoint beliefs for getting to the target region from any region.
+* These waypoints are stored using toFriendlyWaypoint/3.
+*/
+module PopulateFriendlyNavMap(Origin, Target, Depth) {
+	if bel(region(Target, _, _, _, Connections), NewDepth is Depth + 1) then {
+		forall bel(nth0(_, Connections, Source), Source \= Origin,
+			not(chokepointBlocked(Source, Target)), not(chokepointBlocked(Target, Source))) do {
+				if bel(not(toFriendlyWaypoint(Source, _, _))) then
+					insert(toFriendlyWaypoint(Source, Target, Depth)) +
+					PopulateFriendlyNavMap(Origin, Source, NewDepth).
+					
+				if bel(toFriendlyWaypoint(Source, OldTarget, OldDepth), Depth < OldDepth) then
+					delete(toFriendlyWaypoint(Source, OldTarget, OldDepth)) +
+					insert(toFriendlyWaypoint(Source, Target, Depth)) +
+					PopulateFriendlyNavMap(Origin, Source, NewDepth).
+		}
+	}
+}

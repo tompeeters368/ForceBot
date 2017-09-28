@@ -1,0 +1,25 @@
+use "../OverMind.pl" as knowledge.
+use DetermineInitialTask as module.
+use PlaceExpansion as module.
+order = linearall.
+
+/**
+* Manages new drones and concurrent drone tasks.
+*/
+module DroneModule {		
+	% If any drone requests work, give it work
+	forall (Agent).sent?(workRequest(Id, RegionId)), not(bel(task(Id, _, _))) do {
+		if bel(gameframe(Frame), Frame > 5000) then
+			(Agent).send!(disableDroneDefense).
+		if true then
+			DetermineInitialTask(Id, Agent, RegionId).
+	}
+		
+	% If any drone requests a minerals region, supply it
+	forall (Agent).sent?(mineralRegion(MineralId)), bel(mineralField(MineralId, _, _, RegionId)) do
+		(Agent).send:(mineralRegion(MineralId, RegionId)).
+	
+	% If a drone needs an expansion location, calculate it
+	forall bel(task(Id, 'expand', _), not(buildTarget(Id, _, _, _)), agent(Id, Agent)) do
+		PlaceExpansion(Id, Agent).
+}

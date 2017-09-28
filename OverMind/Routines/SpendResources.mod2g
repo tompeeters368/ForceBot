@@ -1,0 +1,11 @@
+use "../OverMind.pl" as knowledge.
+order = linearall.
+
+/**
+* Reserves the resources required to perform the given thing.
+*/
+module SpendResources(Thing) {
+	if	bel(costs(Thing, MinC, GasC, _, _, _), costOverhead(MinO, GasO), NewMin is MinO + MinC, NewGas is GasO + GasC) then
+			delete(costOverhead(MinO, GasO)) +
+			insert(costOverhead(NewMin, NewGas)).
+}

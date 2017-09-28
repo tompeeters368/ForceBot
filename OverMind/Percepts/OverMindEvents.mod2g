@@ -1,0 +1,71 @@
+use "../OverMind.pl" as knowledge.
+use "../Routines/FreeResources.mod2g" as module.
+use Events.ConstructionDeathEvent as module.
+use Events.DeathEvent as module.
+use Events.MorphEndEvent as module.
+use Events.MorphStartEvent as module.
+use Events.NewUnitEvent as module.
+order = linearall.
+
+/**
+* This module picks up numerous generic 'events' such as units dying or morphing.
+*/
+module OverMindEvents {	
+	%%%%%%%%%%%%%%% --------------------------------------- Mineral Patch spotted --------------------------------------- %%%%%%%%%%%%%%%
+	forall percept(mineralField(Id, Amount, _, _, RegionId)), bel(Amount > 0, not(mineralField(Id, _, _, _))) do {
+		if bel(mineralPatches(RegionId, OldAmount), NewAmount is OldAmount + 1) then
+			delete(mineralPatches(RegionId, OldAmount)) +
+			insert(mineralPatches(RegionId, NewAmount)).
+			
+		if bel(not(mineralPatches(RegionId, _))) then
+			insert(mineralPatches(RegionId, 1)).
+	}
+
+	%%%%%%%%%%%%%%% --------------------------------------- Mineral Patch gone --------------------------------------- %%%%%%%%%%%%%%%
+	forall bel(mineralField(Id, _, _, RegionId)), not(percept(mineralField(Id, _, _, _, _))) do {
+		if bel(mineralPatches(RegionId, OldAmount), NewAmount is OldAmount - 1) then
+			delete(mineralPatches(RegionId, OldAmount)) +
+			insert(mineralPatches(RegionId, NewAmount)).
+	}
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Extractor Built --------------------------------------- %%%%%%%%%%%%%%%
+	% Extractors use the Id of the Geyser, not the drone. As such, special code is required to prevent the area's below this from getting confused.
+	forall percept(underConstruction(GeyserId, _, X1, Y1, RegionId)), percept(friendly(GeyserId, 'Zerg Extractor')),
+		bel(vespeneGeyser(GeyserId, X2, Y2, _), X1 =:= X2 + 2, Y1 =:= Y2 + 1, not(underConstruction(GeyserId, _, X1, Y1, RegionId))),
+		bel(task(DroneId, 'build', 'Zerg Extractor'), buildTarget(DroneId, X2, Y2, RegionId), agent(DroneId, Agent)) do
+			FreeResources('Zerg Extractor') +
+			insert(underConstruction(GeyserId, 'Zerg Extractor', X1, Y1, RegionId)) +
+			insert(minersGas(GeyserId, 0)) +
+			delete(morphing(DroneId, 'Zerg Extractor')) +
+			delete(task(DroneId, 'build', 'Zerg Extractor')) +
+			delete(buildTarget(DroneId, X2, Y2, RegionId)) +
+			delete(agent(DroneId, Agent)).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Morph Start --------------------------------------- %%%%%%%%%%%%%%%
+	forall percept(friendly(Id, NewType)), bel(friendly(Id, OldType), NewType \= OldType) do {
+		% Handles all other cases
+		if not(bel(morphing(Id, _))) then MorphStartEvent(Id, OldType, NewType).
+		% For handling cases of morphing into Zerg Lurker Egg or Zerg Cocoon
+		if bel(morphing(Id, MorphType)) then MorphStartEvent(Id, OldType, MorphType).
+	}
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Morph End --------------------------------------- %%%%%%%%%%%%%%%
+	forall bel(underConstruction(Id, Type, _, _, _)), not(percept(underConstruction(Id, _, _, _, _))), percept(friendly(Id, _)) do {
+		% Handles all other cases
+		if not(bel(morphing(Id, _))) then MorphEndEvent(Id, Type).
+		% For handling cases of morphing into Zerg Lurker Egg or Zerg Cocoon
+		if bel(morphing(Id, MorphType)) then MorphEndEvent(Id, MorphType).
+	}
+	
+	%%%%%%%%%%%%%%% --------------------------------------- New Unit (no morph) --------------------------------------- %%%%%%%%%%%%%%%
+	forall percept(friendly(Id, Type)), bel(not(friendly(Id, _)), not(underConstruction(Id, _, _, _, _))) do
+		NewUnitEvent(Id, Type).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Under Construction Unit Death --------------------------------------- %%%%%%%%%%%%%%%
+	forall bel(underConstruction(Id, Type, _, _, _)), not(percept(friendly(Id, _))) do
+		ConstructionDeathEvent(Id, Type).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Completed Unit Death --------------------------------------- %%%%%%%%%%%%%%%
+	forall bel(friendly(Id, Type)), not(percept(friendly(Id, _))) do
+		DeathEvent(Id, Type).
+}

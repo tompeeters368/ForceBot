@@ -1,0 +1,9 @@
+use "../../OverMind.pl" as knowledge.
+order = linearall.
+
+module NewUnitEvent(Id, Type) {
+	% Increment unitAmount
+	if bel(unitAmount(Type, Amount), NewAmount is Amount + 1) then
+		delete(unitAmount(Type, Amount)) +
+		insert(unitAmount(Type, NewAmount)).
+}

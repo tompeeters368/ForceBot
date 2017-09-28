@@ -1,0 +1,8 @@
+use Larva as actionspec.
+use Larva as knowledge.
+order = linear.
+
+module Larva {	
+	if goal(morphing(Thing)) then
+		morph(Thing).
+}

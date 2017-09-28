@@ -1,0 +1,62 @@
+use "../OverMind.pl" as knowledge.
+use AssignTaskToOverlord as module.
+order = linear.
+
+% Determines the closest base to scout
+define closestScout(X1, Y1, X2, Y2, RegionId2, IsStart) as
+	bel(scout(X2, Y2, RegionId2), base(IsStart, _, _, X2, Y2, RegionId2), distanceSq(X1, Y1, X2, Y2, D12)),
+	not(bel(scout(X3, Y3, RegionId3), base(IsStart, _, _, X3, Y3, RegionId3), distanceSq(X1, Y1, X3, Y3, D13), D13 < D12)).
+% Determines the closest base to watch
+define closestWatch(X1, Y1, X2, Y2, RegionId2, IsStart) as
+	bel(base(IsStart, _, _, X2, Y2, RegionId2), not(ownMain(X2, Y2, RegionId2)), not(ownNatural(X2, Y2, RegionId2)),
+		not(baseIsDangerous(X2, Y2, RegionId2)), not(enemyBase(X2, Y2, RegionId2)),
+		not(overlordOrder(_, 'watch', (X2, Y2, RegionId2))), distanceSq(X1, Y1, X2, Y2, D12)),
+	not(bel(base(IsStart, _, _, X3, Y3, RegionId3), not(ownMain(X3, Y3, RegionId3)), not(ownNatural(X3, Y3, RegionId3)),
+		not(baseIsDangerous(X3, Y3, RegionId3)), not(enemyBase(X3, Y3, RegionId3)),
+		not(overlordOrder(_, 'watch', (X3, Y3, RegionId3))), distanceSq(X1, Y1, X3, Y3, D13), D13 < D12)).
+
+/**
+* Assigns the best task to an Overlord based on its current position.
+*/
+module OverlordOrder(Id, Agent, X1, Y1) {
+	%%%%%%%%%%%%%%% --------------------------------------- New Overlord Assignment --------------------------------------- %%%%%%%%%%%%%%%
+	% Scout start locations
+	if closestScout(X1, Y1, X2, Y2, RegionId, true) then
+		AssignTaskToOverlord(Id, Agent, 'scout', X2, Y2, RegionId).
+
+	% Scout enemy natural
+	if bel(enemyNatural(X2, Y2, RegionId), scout(X2, Y2, RegionId)) then
+		AssignTaskToOverlord(Id, Agent, 'scout', X2, Y2, RegionId).
+			
+	% Scout expansion locations
+	if closestScout(X1, Y1, X2, Y2, RegionId, false) then
+		AssignTaskToOverlord(Id, Agent, 'scout', X2, Y2, RegionId).
+	
+	% Watch own natural (for detector)
+	if bel(ownNatural(X2, Y2, RegionId), not(overlordOrder(_, 'watch', (X2, Y2, RegionId)))) then
+		AssignTaskToOverlord(Id, Agent, 'watch', X2, Y2, RegionId).
+	
+	% Watch own main (for detector)
+	if bel(ownMain(X2, Y2, RegionId), not(overlordOrder(_, 'watch', (X2, Y2, RegionId)))) then
+		AssignTaskToOverlord(Id, Agent, 'watch', X2, Y2, RegionId).
+
+	% Assign escort
+	if bel(not(overlordOrder(_, 'escort', _))) then
+		AssignTaskToOverlord(Id, Agent, 'escort', null, null, null).
+
+	% Watch enemy natural
+	if bel(enemyNatural(X2, Y2, RegionId), not(baseIsDangerous(X2, Y2, RegionId)), not(enemyBase(X2, Y2, RegionId)), not(overlordOrder(_, 'watch', (X2, Y2, RegionId)))) then
+		AssignTaskToOverlord(Id, Agent, 'watch', X2, Y2, RegionId).
+
+	% Watch expansion locations
+	if closestWatch(X1, Y1, X2, Y2, RegionId, false) then
+		AssignTaskToOverlord(Id, Agent, 'watch', X2, Y2, RegionId).
+	
+	% Watch start locations
+	if closestWatch(X1, Y1, X2, Y2, RegionId, true) then
+		AssignTaskToOverlord(Id, Agent, 'watch', X2, Y2, RegionId).
+	
+	% If there are no productive orders to give, tell the Overlord escort the army
+	if true then
+		AssignTaskToOverlord(Id, Agent, 'escort', null, null, null).
+}

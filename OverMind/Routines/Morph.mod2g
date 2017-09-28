@@ -1,0 +1,18 @@
+use "../OverMind.pl" as knowledge.
+order = linearall.
+
+/**
+* Handles giving a given unit a morph command.
+*/
+module Morph(Id, Agent, Thing) {
+	if	bel(costs(Thing, MinC, GasC, _, _, _), costOverhead(MinO, GasO), NewMin is MinO + MinC, NewGas is GasO + GasC) then
+				insert(morphing(Id, Thing)) +
+				delete(costOverhead(MinO, GasO)) +
+				insert(costOverhead(NewMin, NewGas)) +
+				(Agent).send!(morphOrder(Thing)).
+	if	bel(producingUnit(Thing, Amount),
+			(((Thing = 'Zerg Zergling' ; Thing = 'Zerg Scourge'), NewAmount is Amount + 2) ;
+			(Thing \= 'Zerg Zergling', Thing \= 'Zerg Scourge', NewAmount is Amount + 1))) then
+				delete(producingUnit(Thing, Amount)) +
+				insert(producingUnit(Thing, NewAmount)).
+}

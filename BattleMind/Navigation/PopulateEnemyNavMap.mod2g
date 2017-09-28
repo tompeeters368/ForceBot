@@ -1,0 +1,22 @@
+use "../BattleMind.pl" as knowledge.
+order = linear.
+
+/**
+* Generates the waypoint beliefs for getting to the target region from any region.
+* These waypoints are stored using toEnemyWaypoint/3.
+*/
+module PopulateEnemyNavMap(Origin, Target, Depth) {
+	if bel(region(Target, _, _, _, Connections), NewDepth is Depth + 1) then {
+		forall bel(nth0(_, Connections, Source), Source \= Origin,
+			not(chokepointBlocked(Source, Target)), not(chokepointBlocked(Target, Source))) do {
+				if bel(not(toEnemyWaypoint(Source, _, _))) then
+					insert(toEnemyWaypoint(Source, Target, Depth)) +
+					PopulateEnemyNavMap(Origin, Source, NewDepth).
+					
+				if bel(toEnemyWaypoint(Source, OldTarget, OldDepth), Depth < OldDepth) then
+					delete(toEnemyWaypoint(Source, OldTarget, OldDepth)) +
+					insert(toEnemyWaypoint(Source, Target, Depth)) +
+					PopulateEnemyNavMap(Origin, Source, NewDepth).
+		}
+	}
+}

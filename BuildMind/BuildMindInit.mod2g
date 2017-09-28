@@ -1,0 +1,17 @@
+use BuildMind as knowledge.
+order = linearall.
+
+module BuildMindInit {
+	%%%%%%%%%%%%%%% --------------------------------------- Static Percepts --------------------------------------- %%%%%%%%%%%%%%%
+	forall percept(base(IsStart, _, _, X1, Y1, RegionId)), bel(X2 is X1 + 2, Y2 is Y1 + 1) do
+		insert(base(IsStart, X1, Y1, RegionId)) +
+		insert(baseCenter(X2, Y2, RegionId)).
+		
+	forall percept(chokepoint(X1, Y1, X2, Y2, RegionId1, RegionId2)) do
+		insert(chokepoint(X1, Y1, X2, Y2, RegionId1, RegionId2)) +
+		insert(chokepoint(X2, Y2, X1, Y1, RegionId2, RegionId1)).
+		
+	%%%%%%%%%%%%%%% --------------------------------------- Dynamic Percepts --------------------------------------- %%%%%%%%%%%%%%%
+	if percept(gameframe(Frame)) then
+		insert(gameframe(Frame)).
+}

@@ -1,0 +1,32 @@
+use "../OverMind.pl" as knowledge.
+use OverlordOrder.
+order = linearall.
+
+/**
+* Responsible for managing Overlords.
+*/
+module OverlordModule {	
+	%%%%%%%%%%%%%%% --------------------------------------- Overlord Decision Making --------------------------------------- %%%%%%%%%%%%%%%
+	forall (Agent).sent?(overlordOrder(X1, Y1)), bel(agent(Id, Agent), friendly(Id, 'Zerg Overlord'), gameframe(Frame), Frame < 48) do
+		insert(overlordRequest(Id, Agent, X1, Y1)).
+	
+	forall (Agent).sent?(overlordOrder(X1, Y1)), bel(agent(Id, Agent), friendly(Id, 'Zerg Overlord'), gameframe(Frame), Frame >= 48) do {
+		if bel(overlordOrder(Id, Order, (X2, Y2, RegionId))) then
+			delete(overlordOrder(Id, Order, (X2, Y2, RegionId))).
+		if true then
+			OverlordOrder(Id, Agent, X1, Y1).
+	}
+	
+	if bel(overlordRequest(Id, Agent, X1, Y1), gameframe(Frame), Frame >= 48) then
+		OverlordOrder(Id, Agent, X1, Y1)+
+		delete(overlordRequest(Id, Agent, X1, Y1)).
+	
+	forall (Agent).sent?(antennae), bel(researchLevel('Antennae', 1)) do
+		(Agent).send:(antennae).
+	
+	% If a base is cleared, request an idle Overlord for watching the cleared base
+	if (_).sent:(cleared(X, Y)), bel(base(_, _, _, X, Y, RegionId)) then
+		delete(baseIsDangerous(X, Y, RegionId)) +
+		delete(enemyBase(X, Y, RegionId)) +
+		(overlords).send!(idleCall).
+}

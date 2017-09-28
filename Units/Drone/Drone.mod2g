@@ -1,0 +1,75 @@
+use Drone as actionspec.
+use Drone as knowledge.
+use "../CombatModules/ChangeTarget3.mod2g" as module.
+order = linear.
+
+module Drone {
+	/* Temporarily disabled. Needs to be improved.
+	% If there's a nearby worker, attack it
+	if	goal(task('gatherMinerals', MineralId)), bel(mineralRegion(MineralId, RegionId), ownBase(X1, Y1, RegionId),
+		enemy(_, Type1, X2, Y2, RegionId), isWorker(Type1), distance(X1, Y1, X2, Y2, D12), D12 < 7,
+		not((enemy(_, Type2, _, _, RegionId), not(isWorker(Type2)), not(isBuilding(Type2))))) then
+			insert(attacking(X2, Y2)) + 
+			attack(X2, Y2).
+			
+	% Delete current kiting point
+	if	bel(kiting(X1, Y1)) then
+			delete(kiting(X1, Y1)).		
+	
+	% If there's a nearby non-worker enemy, start kiting
+	if	goal(task('gatherMinerals', MineralId)), bel(mineralRegion(MineralId, RegionId), ownBase(X1, Y1, RegionId),
+		enemy(_, Type1, X2, Y2, RegionId), not(isWorker(Type1)), not(isBuilding(Type1)), distance(X1, Y1, X2, Y2, D12), D12 < 12),
+		bel(status(_, _, _, _, X3, Y3, _), angleBetween(X1, Y1, X3, Y3, A1), A2 is A1 + 15, kitingPoint(X1, Y1, A2, X4, Y4)) then
+			insert(kiting(X4, Y4)) + 
+			move(X4, Y4).
+	*/
+	
+	if (_).sent:(mine(MineralId)) then
+			gather(MineralId).
+	
+	if	bel(enemy(_, X1, Y1)) then
+			ChangeTarget3('attack', X1, Y1).
+			
+	% If we're not under threat, do your tasks
+	% If goal to stop, stop
+	if	goal(idle), percept(status(_, _, _, Cond, _, _, _, _), not(member(carrying, Cond))) then
+			stop.
+	
+	% If goal to gather minerals, start gathering minerals
+	if	goal(task('gatherMinerals', MineralId)), percept(status(_, _, _, Cond, _, _, _, _), member(idle, Cond)) then
+			gather(MineralId).
+	
+	% If goal to gather minerals, force drone to stay on dedicated patch
+	if goal(task('gatherMinerals', MineralId)), percept(order("MoveToMinerals", TargetId,_,_,_)), bel(not(MineralId = TargetId))
+		then gather(MineralId).
+
+	% If goal to gather gas, start gathering gas
+	if	goal(task('gatherGas', GeyserId)), percept(status(_, _, _, Cond, _, _, _, _), member(idle, Cond)) then
+			gather(GeyserId).
+	
+	% If goal to gather minerals and gathering gas instead, switch
+	if	percept(order('MoveToGas', _, _, _, _)), goal(task('gatherMinerals', MineralId)) then
+			gather(MineralId).
+			
+	%%%%%%%%%%%%%%% --------------------------------------- Build Anywhere --------------------------------------- %%%%%%%%%%%%%%%
+	if goal(task(Task, Thing)), bel((Task = 'build' ; Task = 'expand'), buildTarget(X1, Y1, RegionId1), not(clearingBlock(_))) then {
+		% If a mineralBlock is blocking our expansion, mine it
+		if	bel(Task = 'expand'),
+			bel(chokepoint(X2, Y2, X3, Y3, RegionId1, _), X4 is (X2 + X3) / 2, Y4 is (Y2 + Y3) / 2),
+			bel(mineralBlock(MineralId, X5, Y5, _), distanceSq(X4, Y4, X5, Y5, D45), D45 < 9) then
+				gather(MineralId) +
+				insert(clearingBlock(MineralId)).
+				
+		% Attempt to stop from getting stuck when a building fails to be constructed
+		if percept(order('IncompleteBuilding', _, _, _, _)) then
+			stop.
+				
+		% If goal to build somewhere, move there
+		if bel(status(_, _, X2, Y2, _), distanceSq(X1, Y1, X2, Y2, D12), D12 >= 36) then
+				move(X1, Y1).
+
+		% If goal to build something, do so
+		if true then
+			build(Thing, X1, Y1).
+	}
+}

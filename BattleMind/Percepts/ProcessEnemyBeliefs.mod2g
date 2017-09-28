@@ -1,0 +1,25 @@
+use "../BattleMind.pl" as knowledge.
+order = linear.
+
+/**
+* Responsible for performing enemy belief updates..
+*/
+module ProcessEnemyBeliefs(Id, Type, Vitality, X, Y, RegionId, Visibility) {
+	% Update enemies that have a different percept
+	if percept(Visibility = true, enemy(Id, NewType, NewHealth, NewShields, _, _, _, NewX, NewY, NewRegionId),
+		((Type \= NewType) ; (Vitality =\= NewHealth + NewShields) ; (X \= NewX) ; (Y \= NewY) ; (RegionId \= NewRegionId)),
+		NewVitality is NewHealth + NewShields) then
+			delete(enemy(Id, Type, Vitality, X, Y, RegionId, true)) +
+			insert(enemy(Id, NewType, NewVitality, NewX, NewY, NewRegionId, true)).
+			
+	% Mark non-visible enemies
+	if bel(Visibility = true), not(percept(enemy(Id, _, _, _, _, _, _, _, _, _))) then
+			delete(enemy(Id, Type, Vitality, X, Y, RegionId, true)) +
+			insert(enemy(Id, Type, Vitality, X, Y, RegionId, false)).
+			
+	% Update out-of-sight enemies that re-appear
+	if percept(Visibility = false, enemy(Id, NewType, NewHealth, NewShields, _, _, _, NewX, NewY, NewRegionId),
+		NewVitality is NewHealth + NewShields) then
+			delete(enemy(Id, Type, Vitality, X, Y, RegionId, false)) +	
+			insert(enemy(Id, NewType, NewVitality, NewX, NewY, NewRegionId, true)).
+}

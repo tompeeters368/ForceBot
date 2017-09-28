@@ -1,0 +1,49 @@
+use "../Generic/Generic.act2g" as actionspec.
+use Lurker as knowledge.
+use "../CombatModules/ChangeTarget3.mod2g" as module.
+use Modules.Explore as module.
+use Modules.Defend as module.
+order = linear.
+
+module Lurker {
+	% Don't take actions while burrowing
+	if bel(not(burrowing), status(_, C1, X1, Y1, _)) then {
+		% When burrowed
+		if bel(member(burrowed, C1)) then {
+			% If there isn't a detector or defensive structure nearby
+			if	bel(not((enemyDefense(_, T2, X2, Y2), isDetector(T2, Range), distance(X1, Y1, X2, Y2, D12), D12 =< Range + 6))),
+				bel(not((enemyDefense(_, T2, X2, Y2), isDefensiveBuilding(T2), distanceSq(X1, Y1, X2, Y2, D12), D12 =< 100))) then {
+				% Unburrow if there's not an enemy in attack range
+				if bel(	((closestEnemy(_, _, _, D1), D1 > 64) ; not(closestEnemy(_, _, _, _))),
+						((closestBuilding(_, _, _, D2), D2 > 36) ; not(closestBuilding(_, _, _, _))) ) then
+							ability('Burrowing') +
+							insert(burrowing).
+			}
+		}
+		
+		% When not burrowed
+		% Burrow when near detector
+		if bel(enemyDefense(_, T2, X2, Y2), isDetector(T2, Range), distance(X1, Y1, X2, Y2, D12), D12 =< Range + 4) then
+			ability('Burrowing') +
+			insert(burrowing).
+			
+		% Burrow early when enemy defensive structure is in range
+		if bel(enemyDefense(_, _, X2, Y2), distanceSq(X1, Y1, X2, Y2, D12), D12 =< 100) then
+			ability('Burrowing') +
+			insert(burrowing).
+			
+		% Burrow when enemy unit in range
+		if percept(enemy(_, T2, _, _, _, _, _, X2, Y2, _)), bel(isGroundUnit(T2), distanceSq(X1, Y1, X2, Y2, D12), D12 =< 42) then
+			ability('Burrowing') +
+			insert(burrowing).
+			
+		% Burrow when enemy building in range
+		if percept(enemy(_, T2, _, _, _, C2, _, X2, Y2, _)), bel(isBuilding(T2), not(member(flying, C2)), distanceSq(X1, Y1, X2, Y2, D12), D12 =< 9) then
+			ability('Burrowing') +
+			insert(burrowing).
+			
+		if goal(task('attack', (X2, Y2, _))) then move(X2, Y2).
+		if goal(task('explore', _)) then Explore.
+		if goal(task('defend', (X2, Y2, _))) then move(X2, Y2).
+	}
+}

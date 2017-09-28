@@ -1,0 +1,50 @@
+use "../OverMind.pl" as knowledge.
+use "../Routines/FreeResources.mod2g" as module.
+use "../Drone/DetermineInitialTask.mod2g" as module.
+use "../Strategy/ChangeStrategy.mod2g" as module.
+order = linearall.
+
+/**
+* Responsible for responding to research messages
+*/
+module ResearchEvents {
+	%%%%%%%%%%%%%%% --------------------------------------- Research Messaging --------------------------------------- %%%%%%%%%%%%%%%
+	forall (_).sent:(researching(Thing)) do {
+		% Lock the gas once we have boost and we're going for Zerglings
+		if bel(Thing = 'Metabolic Boost', currentStrategy('Zerglings', _, _)) then {
+			% Re-assign drones to minerals
+			forall bel(task(Id, 'gatherGas', ExtractorId), extractorRegion(ExtractorId, RegionId), agent(Id, Agent)) do
+				DetermineInitialTask(Id, Agent, RegionId).
+			
+			% Lock gas
+			if true then insert(gasLock).
+		}
+		
+		% Free resources used for the research
+		if true then FreeResources(Thing).
+	}
+	
+	forall (Agent).sent:(researched(Thing)) do {
+		% Add upgrade level when required
+		if bel(not(researchLevel(Thing, _))) then
+			insert(researchLevel(Thing, 0)).
+
+		% Increment upgrade level and clear upgrading belief
+		if bel(agent(Id, Agent), researchLevel(Thing, OldLevel), NewLevel is OldLevel + 1) then
+			delete(researching(Id, Thing)) +
+			delete(researchLevel(Thing, OldLevel)) +
+			insert(researchLevel(Thing, NewLevel)).
+
+		% Once we're researched Antennae we morph into a Hive
+		if bel(Thing = 'Antennae') then {
+			if bel(currentStrategy('Mutalisks', _, _)) then
+				ChangeStrategy('MutaTech').
+				
+			if bel(currentStrategy('Hydralisks', _, _) ; currentStrategy('HydraLurker', _, _)), bel(not(carrierSpotted)) then
+				ChangeStrategy('UltraHydra').
+				
+			if true then
+				(overlords).send:(antennae).
+		}
+	}
+}

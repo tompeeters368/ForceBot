@@ -1,0 +1,34 @@
+use "../BattleMind.pl" as knowledge.
+use SimulatorUpdates.RemoveFromFriendlySim as module.
+order = linearall.
+
+/**
+* Responsible for percepts.
+*/
+module BattleMindEvents {
+	%%%%%%%%%%%%%%% --------------------------------------- Friendly Death --------------------------------------- %%%%%%%%%%%%%%%
+	forall bel(friendly(Id, Type, Vitality, RegionId)), not(percept(friendly(Id, Type))) do
+		delete(friendly(Id, Type, Vitality, RegionId)) +
+		RemoveFromFriendlySim(RegionId, Type, Vitality).
+	
+	%%%%%%%%%%%%%%% ------------------------------------- Enemy Race Updating --------------------------------------- %%%%%%%%%%%%%%%	
+	if bel(enemyRace(unknown), enemy(_, Type, _, _, _, _, _), name(Type, [Char|_])) then {
+		% Spotted enemy Zerg unit. 90 = 'Z'
+		if bel(Char = 90) then
+			delete(enemyRace(unknown)) +
+			insert(enemyRace(zerg)) +
+			(overmind).send:(enemyRace(zerg)).
+			
+		% Spotted enemy Protoss unit. 80 = 'P'
+		if bel(Char = 80) then
+			delete(enemyRace(unknown)) +
+			insert(enemyRace(protoss)) +
+			(overmind).send:(enemyRace(protoss)).
+			
+		% Spotted enemy Terran unit. 84 = 'T'
+		if bel(Char = 84) then
+			delete(enemyRace(unknown)) +
+			insert(enemyRace(terran)) +
+			(overmind).send:(enemyRace(terran)).
+	}
+}

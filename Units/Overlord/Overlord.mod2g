@@ -1,0 +1,29 @@
+use "../Generic/Generic.act2g" as actionspec.
+use Overlord as knowledge.
+use Escort.Escort as knowledge.
+use Escort.Escort as module.
+order = linear.
+
+module Overlord {
+	% If scouting, move to base location
+	if	goal(task('scout', (X1, Y1, _))),
+		bel(not(order('Move', X1, Y1))) then
+			move(X1, Y1) +
+			sleep(100).
+			
+	% If watching, move to watch position
+	if	goal(task('watch', (X1, Y1, _))), bel(watchPoint(X1, Y1, X2, Y2)),
+		bel(not(order('Move', X2, Y2)), not(status(_, _, X2, Y2, _))) then
+			move(X2, Y2) +
+			sleep(100).
+			
+	% If escorting, move to escort position
+	if	goal(task('escort', _)) then
+			Escort.
+			
+	% If idling, move to idle position (main)
+	if	goal(task('idle', (X1, Y1, _))),
+		bel(not(order('Move', X1, Y1)), not(status(_, _, X1, Y1, _))) then
+			move(X1, Y1) +
+			sleep(100).
+}

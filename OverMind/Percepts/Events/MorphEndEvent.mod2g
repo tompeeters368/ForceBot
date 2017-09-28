@@ -1,0 +1,32 @@
+use "../../OverMind.pl" as knowledge.
+order = linearall.
+
+module MorphEndEvent(Id, Type) {
+	if bel(morphing(Id, Type)) then
+		delete(morphing(Id, Type)).
+	
+	% Decrement producingUnit for units that morph in pairs
+	if bel(producingUnit(Type, Amount), (Type = 'Zerg Zergling' ; Type = 'Zerg Scourge'), Amount > 1, NewAmount is Amount - 2) then
+		delete(producingUnit(Type, Amount)) +
+		insert(producingUnit(Type, NewAmount)).
+		
+	% Decrement producingUnit for units that morph solo
+	if bel(producingUnit(Type, Amount), Type \= 'Zerg Zergling', Type \= 'Zerg Scourge', Amount > 0, NewAmount is Amount - 1) then
+		delete(producingUnit(Type, Amount)) +
+		insert(producingUnit(Type, NewAmount)).
+		
+	% Increment unitAmount
+	if bel(unitAmount(Type, Amount), NewAmount is Amount + 1) then
+		delete(unitAmount(Type, Amount)) +
+		insert(unitAmount(Type, NewAmount)).
+		
+	% When the first Evo Chamber finishes, create another one for two researches
+	if bel(Type = 'Zerg Spawning Pool', not(enemyRace('zerg')), not((openingUsed('ZVP_5Pool'))), not((openingUsed('ZVT_5Pool')))) then
+			insert(timing(0, 'Zerg Zergling', 'train')) +
+			insert(timing(1, 'Zerg Zergling', 'train')) +
+			insert(timing(2, 'Zerg Zergling', 'train')).
+		
+	% When the first Evo Chamber finishes, create another one for two researches
+	if bel(Type = 'Zerg Evolution Chamber', not(friendly(_, 'Zerg Evolution Chamber'))) then
+			insert(timing(0, 'Zerg Evolution Chamber', 'build')).
+}

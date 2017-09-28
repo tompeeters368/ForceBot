@@ -1,0 +1,18 @@
+use "../OverMind.pl" as knowledge.
+order = linearall.
+
+/**
+* Cancels a morphing order.
+* It is presumed the unit died (i.e. doesn't need to be notified).
+*/
+module CancelMorph(Id, Thing) {
+	if 	bel(costs(Thing, MinC, GasC, _, _, _), costOverhead(MinO, GasO), NewMin is MinO - MinC, NewGas is GasO - GasC,
+			producingUnit(Thing, Amount),
+			(((Thing = 'Zerg Zergling' ; Thing = 'Zerg Scourge'), NewAmount is Amount - 2) ;
+			(Thing \= 'Zerg Zergling', Thing \= 'Zerg Scourge', NewAmount is Amount - 1))) then
+				delete(morphing(Id, Thing)) +
+				delete(costOverhead(MinO, GasO)) +
+				insert(costOverhead(NewMin, NewGas)) +
+				delete(producingUnit(Thing, Amount)) +
+				insert(producingUnit(Thing, NewAmount)).
+}

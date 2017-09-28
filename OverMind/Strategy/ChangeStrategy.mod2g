@@ -1,0 +1,16 @@
+use "../OverMind.pl" as knowledge.
+order = linearall.
+
+module ChangeStrategy(NewStrategy) {
+	if bel(strategy(NewStrategy, NewRequirements, NewDronesPerHatchery)) then {
+		if bel(currentStrategy(OldStrategy, OldRequirements, OldDronesPerHatchery)) then
+			delete(currentStrategy(OldStrategy, OldRequirements, OldDronesPerHatchery)).
+		
+		if true then
+			insert(currentStrategy(NewStrategy, NewRequirements, NewDronesPerHatchery)).
+	}
+	
+	% Delete any gasLocks
+	if bel(gasLock) then
+		delete(gasLock).
+}

@@ -1,0 +1,20 @@
+use "../OverMind.pl" as knowledge.
+use AssignTaskToDrone as module.
+order = linear.
+
+/**
+* Determines a task to give to the given newly created Drone based on position.
+*/
+module DetermineInitialTask(Id, Agent, RegionId) {
+	% Assign one to the local mineral field if it isn't satured yet
+	if 	bel(minersMinerals(RegionId, Miners), mineralPatches(RegionId, Patches), Miners < Patches * 2) then
+			AssignTaskToDrone(Id, Agent, 'gatherMinerals', RegionId, null).
+		
+	% If it is saturated, assign it to the lowest one
+	if 	bel(minersMinerals(RegionId2, Miners2), mineralPatches(RegionId2, Patches2), Patches2 > 0),
+		not(bel(minersMinerals(RegionId3, Miners3), mineralPatches(RegionId3, Patches3), Patches3 > 0, Miners2 / Patches2 > Miners3 / Patches3)) then
+			AssignTaskToDrone(Id, Agent, 'gatherMinerals', RegionId2, null).
+
+	% TODO: Assign tasks for when there are no minerals/geysers in current region
+	% or maybe when its better to mine at a different region due to saturation
+}

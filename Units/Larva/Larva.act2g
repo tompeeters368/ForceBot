@@ -1,0 +1,11 @@
+use Larva as knowledge.
+
+% The morph action
+define morph(Id) with
+	pre { true }
+	post { true }
+
+% Debug draw
+define debugdraw(String) with
+	pre { true }
+	post { true }

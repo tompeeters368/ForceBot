@@ -1,0 +1,13 @@
+use Escort as knowledge.
+use "../Overlord.pl" as knowledge.
+order = linearall.
+
+/** 
+* To be called the first time DetectorModule is called
+*/
+module EscortInit {
+	if true then
+		subscribe(fighterRegionOrders) +
+		(battlemind).send?(regionOrders) +
+		(overmind).send?(ownMain).
+}

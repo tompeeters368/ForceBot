@@ -1,0 +1,14 @@
+use "../OverMind.pl" as knowledge.
+order = linear.
+
+module RequirementsController {
+	if bel(not(timing(_, _, _)), currentStrategy(_, Requirements, _), meetsStrategyRequirements(Requirements, Thing), Thing \= null) then {
+		if bel(Thing = 'Zerg Lair' ; Thing = 'Zerg Hive' ; Thing = 'Zerg Greater Spire') then {
+			if bel(costs(Thing, _, _, _, _, ThingRequirements), meetsRequirements(ThingRequirements)) then
+				insert(timing(0, Thing, 'morph')).
+		}
+				
+		if bel(costs(Thing, _, _, _, _, ThingRequirements), meetsRequirements(ThingRequirements)) then
+				insert(timing(0, Thing, 'build')).
+	}
+}

@@ -1,0 +1,36 @@
+use "../Zergling.pl" as knowledge.
+use Suicide as knowledge.
+use "../../CombatModules/ChangeTarget2.mod2g" as module.
+use "../../CombatModules/ChangeTarget3.mod2g" as module.
+order = linear.
+
+/**
+* In charge of decision making for the Suicide subroutine
+*/
+module Suicide {
+	% Attack center of region
+	if bel(closestEnemy(Id, _, _, _, 2)) then {
+		if bel(not(enemyMain(_, _, _)), base(X1, Y1, RegionId1), not((base(_, _, RegionId2), RegionId2 < RegionId1))) then
+			ChangeTarget3('move', X1, Y1).
+			
+		if true then
+			ChangeTarget2('attack', Id).
+	}
+	
+	% Attack closest enemy according to priorities
+	% If far away and priority 1, attack move to avoid attacking lower priority targets through attack move
+	if bel(closestEnemy(Id, _, _, D1, 1), D1 > 25) then
+		ChangeTarget2('attack', Id).
+		
+	% Attack move to closest enemy according to priorities
+	if bel(closestEnemy(_, X1, Y1, _, _)) then
+		ChangeTarget3('attack', X1, Y1).
+			
+	% Attack center of region
+	if bel(enemyMain(X1, Y1, _)) then
+		ChangeTarget3('attack', X1, Y1).
+	
+	% Move to lowest regionId
+	if bel(base(X1, Y1, RegionId1), not((base(_, _, RegionId2), RegionId2 < RegionId1))) then
+		ChangeTarget3('move', X1, Y1).
+}

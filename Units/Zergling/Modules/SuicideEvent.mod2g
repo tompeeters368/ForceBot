@@ -1,0 +1,35 @@
+use "../Zergling.pl" as knowledge.
+use Suicide as knowledge.
+use SuicideTargetting as module.
+order = linearall.
+
+/**
+* In charge of data handling for the Suicide subroutine
+*/
+module SuicideEvent {
+	% Inserting received bases
+	forall (_).sent:(base(X1, Y1, RegionId)) do
+		insert(base(X1, Y1, RegionId)).
+		
+	% Deleting bases when told to
+	forall (_).sent:(not(base(X1, Y1, RegionId))) do
+		delete(base(X1, Y1, RegionId)).
+		
+	% Inserting enemy main
+	forall (_).sent:(enemyMain(X1, Y1, RegionId)) do
+		insert(enemyMain(X1, Y1, RegionId)) +
+		delete(base(X1, Y1, RegionId)).
+		
+	% Discovering the enemy main
+	if bel(status(_, _, _, _, RegionId), base(X1, Y1, RegionId)), percept(enemy(_, Type, _, _, _, _, _, _, _, RegionId)), bel(isBase(Type)) then
+		insert(enemyMain(X1, Y1, RegionId)) +
+		delete(base(X1, Y1, RegionId)) +
+		(fighters).send:(enemyMain(X1, Y1, RegionId)).
+		
+	% Deleting empty bases
+	if bel(status(_, _, X1, Y1, RegionId), base(X2, Y2, RegionId), distanceSq(X1, Y1, X2, Y2, D12), D12 =< 25) then
+		delete(base(X2, Y2, RegionId)) +
+		(fighters).send:(not(base(X1, Y1, RegionId))).
+		
+	if true then SuicideTargetting.
+}

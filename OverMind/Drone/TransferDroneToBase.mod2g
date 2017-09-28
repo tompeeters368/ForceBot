@@ -1,0 +1,11 @@
+use "../OverMind.pl" as knowledge.
+use AssignTaskToDrone as module.
+
+module TransferDroneToBase {
+	% If there is a base with less than the minimum amount of workers, transfer one from a more populated one
+	if bel(minersMinerals(RegionId1, Miners1), not(regionUnderAttack(RegionId1)), mineralPatches(RegionId1, Patches1), Miners1 < Patches1,
+		minersMinerals(RegionId2, Miners2), mineralPatches(RegionId2, Patches2), Miners2 > Patches2,
+		task(Id, 'gatherMinerals', RegionId2), friendly(Id, 'Zerg Drone'), agent(Id, Agent)) then
+			AssignTaskToDrone(Id, Agent, 'gatherMinerals', RegionId1, null) +
+			TransferDroneToBase. % If succesful, see if we need to transfer another
+}

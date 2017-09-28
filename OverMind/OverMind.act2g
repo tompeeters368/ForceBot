@@ -1,0 +1,17 @@
+use OverMind as knowledge.
+
+define forfeit with
+	pre { true }
+	post { true }
+	
+define cancel(Id) with
+	pre { true }
+	post { true }
+
+define debugdraw(String) with
+	pre { true }
+	post { true }
+
+define debugdraw(Id, String) with
+	pre { true }
+	post { true }

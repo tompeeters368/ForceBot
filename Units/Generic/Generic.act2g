@@ -1,0 +1,33 @@
+use Generic as knowledge.
+
+define stop with
+	pre { true }
+	post { true }
+	
+define move(X, Y) with
+	pre{ true }
+	post{ true }
+	
+define attack(Id) with
+	pre{ true }
+	post{ true }
+	
+define attack(X, Y) with
+	pre{ true }
+	post{ true }
+	
+define ability(Id) with
+	pre{ true }
+	post{ true }
+	
+define morph(String) with
+	pre { true }
+	post { true }
+	
+define debugdraw(String) with
+	pre { true }
+	post { true }
+	
+define debugdraw(Id, String) with
+	pre { true }
+	post { true }

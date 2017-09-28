@@ -1,0 +1,7 @@
+use Generic as knowledge.
+order = linearall.
+
+module GenericInit {
+	if percept(self(Id, _)) then
+		(overmind).send(agent(Id)).
+}

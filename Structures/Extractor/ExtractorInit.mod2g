@@ -1,0 +1,10 @@
+use "../Generic/Generic.pl" as knowledge.
+use "../Generic/GenericInit.mod2g" as module.
+order = linearall.
+
+module ExtractorInit {
+	if true then GenericInit.
+	
+	if percept(self(Id, _)), percept(status(_, _, _, _, _, _, _, RegionId)) then
+		(overmind).send:(extractorRegion(Id, RegionId)).
+}

@@ -1,0 +1,34 @@
+use "../OverMind.pl" as knowledge.
+use "../Routines/FreeResources.mod2g" as module.
+use AssignTaskToDrone as module.
+order = linearall.
+
+module DroneDeathEvent(Id, Task, Target) {
+	if bel(Task = 'gatherMinerals', minersMinerals(Target, Amount), NewAmount is Amount - 1,
+			dedicatedPatch(Id, MineralId), mineralFieldN(MineralId, X, Y, Target, N), NewN is N + 1) then	
+		delete(minersMinerals(Target, Amount)) +
+		insert(minersMinerals(Target, NewAmount)) +
+		delete(mineralFieldN(MineralId, X, Y, Target, N)) +
+		insert(mineralFieldN(MineralId, X, Y, Target, NewN)) +
+		delete(dedicatedPatch(Id, MineralId)).
+		
+	if bel(Task = 'gatherGas', minersGas(Target, Amount), NewAmount is Amount - 1) then
+		delete(minersGas(Target, Amount)) +
+		insert(minersGas(Target, NewAmount)).
+		
+	if bel(buildTarget(Id, X, Y, RegionId)) then {
+		if true then
+			delete(buildTarget(Id, X, Y, RegionId)).
+			
+		if bel(Task = 'expand') then
+			insert(baseIsDangerous(X, Y, RegionId)) +
+			(battlemind).send:(baseIsDangerous(X, Y, RegionId)) +
+			(buildmind).send:(baseIsDangerous(X, Y, RegionId)).
+	}
+	
+	if bel(Task = 'build' ; Task = 'expand') then
+		FreeResources(Target).
+		
+	if true then
+		delete(task(Id, Task, Target)).
+}

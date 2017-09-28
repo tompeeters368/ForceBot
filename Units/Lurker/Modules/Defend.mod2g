@@ -1,0 +1,17 @@
+use "../Lurker.pl" as knowledge.
+use "../../CombatModules/ChangeTarget2.mod2g" as module.
+use "../../CombatModules/ChangeTarget3.mod2g" as module.
+order = linear.
+
+/**
+* Module for idling (= defending).
+*/
+module Defend(X1, Y1) {
+	% Setting retreat location
+	if bel(retreating) then
+			ChangeTarget3('move', X1, Y1).
+	
+	% Setting defending target
+	if bel(defending, closestEnemy(Id, _, _, _)) then
+			ChangeTarget2('attack', Id).
+}

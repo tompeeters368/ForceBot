@@ -1,0 +1,19 @@
+use ChangeTarget as knowledge.
+use Act2 as module.
+order = linear.
+
+/**
+* Changes the target goal if necessary. Uses 2 parameters.
+*/
+module ChangeTarget2(NewOrder, NewTarget) {
+	if not(goal(target(NewOrder, NewTarget))) then {
+		if goal(target(OldOrder, OldTarget)) then
+			drop(target(OldOrder, OldTarget)) +
+			adopt(target(NewOrder, NewTarget)) +
+			Act2(NewOrder, NewTarget).
+			
+		if true then
+			adopt(target(NewOrder, NewTarget)) +
+			Act2(NewOrder, NewTarget).
+	}
+}

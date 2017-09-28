@@ -1,0 +1,28 @@
+use Hydralisk as knowledge.
+order = linearall.
+
+module HydraliskInit {
+	if true then
+		subscribe(fighters) +
+		subscribe(fighterTasks) +
+		subscribe(fighterRegionOrders).
+	
+	if percept(self(Id, Type)), percept(status(Health, _, _, Conditions, _, X, Y, RegionId)) then
+		insert(self(Id, Type)) +
+		insert(status(Health, Conditions, X, Y, RegionId)) +
+		(overmind).send?(unitKnowledge(Id, Type)) +
+		(battlemind).send:(friendly(Id, Type, Health, X, Y, RegionId)).
+	
+	% Store regions
+	forall percept(region(RegionId, X, Y, _, _)) do
+		insert(region(RegionId, X, Y)).
+		
+	% Store map dimensions
+	if percept(map(Width, Height)) then
+		insert(map(Width, Height)).
+	
+	% Request regionOrders from battlemind
+	if true then
+		(battlemind).send?(taskRequest) +
+		(battlemind).send?(regionOrders).
+}

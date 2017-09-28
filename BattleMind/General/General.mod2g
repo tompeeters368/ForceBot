@@ -1,0 +1,27 @@
+use "../BattleMind.pl" as knowledge.
+use ChangeTask as module.
+order = linearall.
+
+/**
+* The general decides what task to complete next.
+*/
+module General {
+	if bel(	openingUsed(Opening), (
+			((Opening = 'ZVP_12Hatch' ; Opening = 'ZVT_12Hatch'), resources(Supply), Supply > 80) ;
+			(Opening \= 'ZVP_12Hatch', Opening \= 'ZVT_12Hatch')
+			)),
+		bel(nextAttackLocation(X, Y, RegionId)) then {
+			if bel(not(task('attack', (X, Y, RegionId)))) then
+				ChangeTask('attack', X, Y, RegionId).
+	}
+	
+	if (_).sent:(ownBase(X, Y, RegionId)) then {
+		if bel(not(task(_, _))) then
+			ChangeTask('defend', X, Y, RegionId).
+		if bel(task('defend', _), ownNatural(X, Y, RegionId)) then
+			ChangeTask('defend', X, Y, RegionId).
+	}
+
+	forall (Agent).sent?(taskRequest), bel(task(Task, Target)) do
+		(Agent).send!(task(Task, Target)).
+}

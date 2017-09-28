@@ -1,0 +1,11 @@
+use Drone as knowledge.
+order = linear.
+
+module UpdateStatus(Health, Conditions, X1, Y1, RegionId) {
+	if bel(not(status(Health, Conditions, X1, Y1, RegionId)), status(OldHealth, OldConditions, OldX1, OldY1, OldRegionId)) then
+		delete(status(OldHealth, OldConditions, OldX1, OldY1, OldRegionId)) +
+		insert(status(Health, Conditions, X1, Y1, RegionId)).
+		
+	if bel(not(status(_, _, _, _, _))) then
+		insert(status(Health, Conditions, X1, Y1, RegionId)).
+}

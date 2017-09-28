@@ -1,0 +1,20 @@
+use "../OverMind.pl" as knowledge.
+order = linear.
+
+/**
+* Handles giving a structure a research command.
+*/
+module Research(Id, Agent, Thing) {
+	if	bel(costs(Thing, MinC, GasC, _, _, _), costOverhead(MinO, GasO), NewMin is MinO + MinC, NewGas is GasO + GasC) then
+			  	insert(researching(Id, Thing)) +
+			  	delete(costOverhead(MinO, GasO)) +
+			  	insert(costOverhead(NewMin, NewGas)) +
+				(Agent).send!(researchOrder(Thing)).
+			
+	if	bel(researchLevel(Thing, Level), NextLevel is Level + 1, atomic_list_concat([Thing, ' ', NextLevel], ThingLevel),
+			costs(ThingLevel, MinC, GasC, _, _, _), costOverhead(MinO, GasO), NewMin is MinO + MinC, NewGas is GasO + GasC) then
+			  	insert(researching(Id, Thing)) +
+			  	delete(costOverhead(MinO, GasO)) +
+			  	insert(costOverhead(NewMin, NewGas)) +
+				(Agent).send!(researchOrder(Thing)).
+}

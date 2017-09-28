@@ -1,0 +1,118 @@
+use BattleMind as knowledge.
+use BattleMind as actionspec.
+use Percepts.BattleMindPercepts as module.
+use Percepts.BattleMindEvents as module.
+use Navigation.PopulateFriendlyNavMap as module.
+use General.ChangeTask as module.
+use Commander.Commander as module.
+use General.General as module.
+order = linearall.
+
+module BattleMind {		
+	%%%%%%%%%%%%%%% --------------------------------------- Updating --------------------------------------- %%%%%%%%%%%%%%%
+	if true then BattleMindEvents.
+	if true then BattleMindPercepts.
+		
+	%%%%%%%%%%%%%%% --------------------------------------- Messaging --------------------------------------- %%%%%%%%%%%%%%%
+	% Insert new enemyBases
+	forall (_).sent:(enemyBase(X1, Y1, RegionId)), not(bel(enemyBase(X1, Y1, RegionId))) do
+		insert(enemyBase(X1, Y1, RegionId)).
+		
+	% Insert new baseIsDangerous
+	forall (_).sent:(baseIsDangerous(X1, Y1, RegionId)), not(bel(baseIsDangerous(X1, Y1, RegionId))) do
+		insert(baseIsDangerous(X1, Y1, RegionId)).
+		
+	% Remove dangerous place once it's been cleared
+	forall (_).sent:(cleared(X1, Y1)) do {
+		if bel(enemyBase(X1, Y1, RegionId)) then
+			delete(enemyBase(X1, Y1, RegionId)).
+		if bel(baseIsDangerous(X1, Y1, RegionId)) then
+			delete(baseIsDangerous(X1, Y1, RegionId)).
+	}
+			
+	% When receiving a new base location
+	forall (_).sent:(ownBase(X1, Y1, RegionId1)) do {
+		% The first base we receive is the main
+		if not(bel(ownBase(_, _, _))) then {
+			if true then
+				insert(ownMain(X1, Y1, RegionId1)) +
+				PopulateFriendlyNavMap(RegionId1, RegionId1, 0).
+			% Mark all other starting locations as dangerous
+			forall bel(base(true, _, _, X2, Y2, RegionId2), RegionId1 \= RegionId2) do
+				insert(baseIsDangerous(X2, Y2, RegionId2)).
+			% Determine natural
+			if bel(chokepoint(_, _, _, _, RegionId1, RegionId2),
+					base(_, _, _, X2, Y2, RegionId2), distanceSq(X1, Y1, X2, Y2, D12),
+					not((chokepoint(_, _, _, _, RegionId1, RegionId3), base(_, _, _, X3, Y3, RegionId3), distanceSq(X1, Y1, X3, Y3, D13), D13 < D12))) then
+						insert(ownNatural(X2, Y2, RegionId2)).
+		}
+		% Add the base to the belief base and notify other units
+		if true then
+			insert(ownBase(X1, Y1, RegionId1)).
+	}
+	
+	% Inform new units of non-visible enemies
+	% TODO: X and Y are false... solution?
+	forall (Agent).sent?(enemyKnowledge), bel(enemy(Id, Type, _, X, Y, RegionId, false)) do
+		(Agent).send:(enemy(Id, Type, X, Y, RegionId, false)).
+	
+	% Inform overmind of safe regions
+	forall bel(regionUnderAttack(RegionId), not(enemy(_, _, _, _, _, RegionId, _))) do
+		delete(regionUnderAttack(RegionId)) +
+		(overmind).send:(not(regionUnderAttack(RegionId))).
+	
+	% Inform overmind of regions under attack
+	forall bel(enemy(_, _, _, _, _, RegionId, _), ownBase(_, _, RegionId), not(regionUnderAttack(RegionId))) do
+		insert(regionUnderAttack(RegionId)) +
+		(overmind).send:(regionUnderAttack(RegionId)).
+		
+	% Store the current strategy
+	if (_).sent:(currentStrategy(NewStrategy)), bel(currentStrategy(OldStrategy)) then
+		delete(currentStrategy(OldStrategy)) +
+		insert(currentStrategy(NewStrategy)).
+		
+	% Store the opening used
+	if (_).sent:(openingUsed(Opening)) then
+		insert(openingUsed(Opening)).
+		
+ 	% Inform new Lurkers of non-visible defensive structures
+	forall (Agent).sent?(enemyDefense), bel(enemy(Id, Type, _, X, Y, _, false), isDefensiveBuilding(Type)) do
+		(Agent).send:(enemyDefense(Id, Type, X, Y)).
+		
+	forall(Agent).sent?(enemyDefense), bel(simDisabled) do
+		(Agent).send:(simDisabled).
+		
+	%%%%%%%%%%%%%%% --------------------------------------- Enemy spotting --------------------------------------- %%%%%%%%%%%%%%%
+	if bel(enemyRace('terran')) then {
+		if bel(not(siegeTankSpotted), enemy(_, 'Terran Siege Tank', _, _, _, _, _)) then
+			insert(siegeTankSpotted) +
+			(overmind).send:(siegeTankSpotted).
+		if bel(not(vultureSpotted), enemy(_, 'Terran Vulture', _, _, _, _, _)) then
+			insert(vultureSpotted) +
+			(overmind).send:(vultureSpotted).
+	}
+	
+	if bel(enemyRace('protoss'), not(carrierSpotted), enemy(_, 'Protoss Carrier', _, _, _, _, _)) then
+		insert(carrierSpotted) +
+		(overmind).send:(carrierSpotted).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Repopulate NavMaps when mineralBlock is detected --------------------------------------- %%%%%%%%%%%%%%%
+	forall (_).sent:(chokepointBlocked(RegionId1, RegionId2)) do {
+		if true then insert(chokepointBlocked(RegionId1, RegionId2)).
+		
+		if bel(toFriendlyWaypoint(_, Source, 0)) then {
+			forall bel(toFriendlyWaypoint(S, T, D)) do
+				delete(toFriendlyWaypoint(S, T, D)).
+				
+			if true then PopulateFriendlyNavMap(Source, Source, 0).
+		}
+		
+		if bel(task('attack', (X, Y, Target))) then
+			ChangeTask('attack', X, Y, Target).
+	}
+			
+	%%%%%%%%%%%%%%% --------------------------------------- Other Modules --------------------------------------- %%%%%%%%%%%%%%%
+	if true then General.
+	if bel(task('attack', _)) then Commander.
+	if bel(random(0, 1000, Rand)) then debugdraw(Rand).
+}

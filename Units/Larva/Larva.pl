@@ -1,0 +1,3 @@
+ :- dynamic
+	morphing/1
+.

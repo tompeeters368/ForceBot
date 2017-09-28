@@ -1,0 +1,41 @@
+use "../../OverMind.pl" as knowledge.
+use "../../Routines/FreeResources.mod2g" as module.
+order = linearall.
+
+module MorphStartEvent(Id, OldType, NewType) {
+	% Subtract cost from overhead
+	if bel(morphing(Id, NewType)) then
+		FreeResources(NewType).
+		
+	% Free resources required for the morph
+	if bel(task(Id, Task, NewType), agent(Id, Agent)) then
+		FreeResources(NewType) +
+		(buildmind).send:(buildRequestCompleted(Agent)) +
+		delete(task(Id, Task, NewType)).
+		
+	% Decrement unitAmount for the old unit
+	if bel(unitAmount(OldType, Amount), NewAmount is Amount - 1) then
+		delete(unitAmount(OldType, Amount)) +
+		insert(unitAmount(OldType, NewAmount)).
+					
+	% Clean up additional larva region belief
+	if bel(larva(Id, Agent, RegionId)) then
+		delete(larva(Id, Agent, RegionId)).
+		
+	% Clean up buildTarget
+	if bel(buildTarget(Id, X, Y, RegionId)) then
+			delete(buildTarget(Id, X, Y, RegionId)).
+			
+	% Store number of hatcheries
+	if bel(NewType = 'Zerg Hatchery', numberOfHatcheries(OldAmount), NewAmount is OldAmount + 1) then
+		delete(numberOfHatcheries(OldAmount)) +
+		insert(numberOfHatcheries(NewAmount)).
+		
+	% Clear agent belief
+	if bel(agent(Id, Agent)) then
+		delete(agent(Id, Agent)).
+		
+	% When a Spawning Pool is finished and going for Muta's, construct an Extractor
+	if	bel(NewType = 'Zerg Spawning Pool', (openingUsed('ZVZ_9Pool') ; openingUsed('ZVU_9Pool')), not(friendly(_, 'Zerg Extractor'))) then
+			insert(timing(9, 'Zerg Extractor', 'build')).
+}

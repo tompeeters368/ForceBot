@@ -1,0 +1,32 @@
+use "../OverMind.act2g" as actionspec.
+use "../OverMind.pl" as knowledge.
+use ChangeStrategy as module.
+order = linearall.
+
+module EnemyRaceDiscovery(Race) {
+	%%%%%%%%%%%%%%% --------------------------------------- Protoss discovered --------------------------------------- %%%%%%%%%%%%%%%
+	if bel(Race = 'protoss') then {
+		% Change to Hydra/Lurker strategy if the Spire hasn't already completed
+		if bel(not(friendly(_, 'Zerg Spire'))) then ChangeStrategy('HydraLurker').
+		
+		% Cancel the Spire if it's under construction
+		if bel(underConstruction(Id, 'Zerg Spire', _, _, _)) then
+			cancel(Id).
+	}
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Terran discovered --------------------------------------- %%%%%%%%%%%%%%%
+	if bel(Race = 'terran') then {
+		% Change to Hydra/Lurker strategy
+		if true then ChangeStrategy('HydraLurker').
+		
+		% Cancel the Spire if it's under construction
+		if bel(underConstruction(Id, 'Zerg Spire', _, _, _)) then
+			cancel(Id).
+	}
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Zerg discovered --------------------------------------- %%%%%%%%%%%%%%%
+	% Currently no actions are taken for zerg (already going muta's)
+	%if bel(Race = 'zerg') then {
+	%	
+	%}
+}

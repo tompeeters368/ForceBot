@@ -1,0 +1,34 @@
+use Drone as knowledge.
+
+% The gather action
+define gather(Id) with
+	pre { true }
+	post { true }
+
+define move(X, Y) with
+	pre{ true }
+	post{ true }
+
+define attack(Id) with
+	pre{ true }
+	post{ true }
+	
+define attack(X, Y) with
+	pre{ true }
+	post{ true }
+
+define build(Building, X, Y) with
+	pre { true }
+	post { true }
+
+define stop with
+	pre { true }
+	post { true }
+
+define debugdraw(String) with
+	pre { true }
+	post { true }
+
+define debugdraw(Id, String) with
+	pre { true }
+	post { true }

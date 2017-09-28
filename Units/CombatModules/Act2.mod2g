@@ -1,0 +1,12 @@
+use "../Generic/Generic.act2g" as actionspec.
+use ChangeTarget as knowledge.
+order = linear.
+
+/**
+* Executes the given order. Uses 2 parameters.
+*/
+module Act2(Order, Id) {
+	% Currently only attack orders are used for this.
+	if true then
+		attack(Id).
+}

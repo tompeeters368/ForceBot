@@ -1,0 +1,12 @@
+use Larva as actionspec.
+use Larva as knowledge.
+order = linearall.
+
+module LarvaEvent {	
+	%if (_).sent!(morphOrder(Thing)), bel(string_concat('Morphing to: ', Thing, String)) then
+	%	adopt(morphing(Thing)) +
+	%	debugdraw(String).
+	
+	if (_).sent!(morphOrder(Thing)) then
+		adopt(morphing(Thing)).
+}

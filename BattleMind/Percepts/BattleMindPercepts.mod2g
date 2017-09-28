@@ -1,0 +1,91 @@
+use "../BattleMind.pl" as knowledge.
+use SimulatorUpdates.AddToEnemySim as module.
+%use SimulatorUpdates.AddToFriendlySim as module.
+use SimulatorUpdates.EnemyUpdate as module.
+use SimulatorUpdates.FriendlyUpdate as module.
+use SimulatorUpdates.RemoveFromEnemySim as module.
+use SimulatorUpdates.RemoveFromFriendlySim as module.
+use ProcessEnemyBeliefs as module.
+use "../General/ChangeTask.mod2g" as module.
+order = linearall.
+
+/**
+* Responsible for percepts.
+*/
+module BattleMindPercepts {
+	%%%%%%%%%%%%%%% --------------------------------------- Resources/Gameframe Updating --------------------------------------- %%%%%%%%%%%%%%%
+	% resources percept
+	if percept(resources(_, _, CurrentSupply, _)), bel(not(resources(CurrentSupply)), resources(OldCurrentSupply)) then
+			delete(resources(OldCurrentSupply)) +
+			insert(resources(CurrentSupply)).
+			
+	if percept(gameframe(NewFrame)), bel(gameframe(OldFrame)) then {
+		if bel(OldFrame + 240 < NewFrame, not(simDisabled)) then {
+			if bel(task('attack', (X, Y, RegionId))) then
+				ChangeTask('attack', X, Y, RegionId).
+			forall bel(enemy(Id, Type, Vitality, X, Y, RegionId, Visibility)) do
+				delete(enemy(Id, Type, Vitality, X, Y, RegionId, Visibility)).
+			if true then
+				insert(simDisabled) +
+				(lurkers).send:(simDisabled).
+		}
+		
+		if true then
+			delete(gameframe(OldFrame)) +
+			insert(gameframe(NewFrame)).
+	}
+			
+	%%%%%%%%%%%%%%% --------------------------------------- Enemy Updating --------------------------------------- %%%%%%%%%%%%%%%				
+	if bel(not(simDisabled)) then {
+		% Update the enemy sims
+		forall percept(enemy(Id, Type, Health, Shields, _, _, _, _, _, RegionId)),
+			bel(enemy(Id, _, _, _, _, _, _), Vitality is Health + Shields,
+			not(enemy(Id, Type, Vitality, _, _, RegionId, _)), enemy(Id, OldType, OldVitality, _, _, OldRegionId, _)) do
+				EnemyUpdate(Type, Vitality, RegionId, OldType, OldVitality, OldRegionId) +
+				insert(baseIsDangerous(Id, Vitality, OldVitality)).
+			
+		% Update the enemy beliefs
+		forall bel(enemy(Id, Type, Vitality, X, Y, RegionId, Visibility)) do
+				ProcessEnemyBeliefs(Id, Type, Vitality, X, Y, RegionId, Visibility).
+				
+		% Store new enemies
+		forall percept(enemy(Id, Type, Health, Shields, _, _, _, X, Y, RegionId)),
+			bel(combat(Type, _, _, _, _, _), not(enemy(Id, _, _, _, _, _, _)), Vitality is Health + Shields) do
+				insert(enemy(Id, Type, Vitality, X, Y, RegionId, true)) +
+				AddToEnemySim(RegionId, Type, Vitality).
+				
+		%%%%%%%%%%%%%%% --------------------------------------- Friendly Updating --------------------------------------- %%%%%%%%%%%%%%%
+		% friendly percepts
+		forall (_).sent:(friendly(FriendlyId, FriendlyType, FriendlyVitality, FriendlyX, FriendlyY, FriendlyRegionId)),
+			percept(friendly(FriendlyId, FriendlyType)),
+			bel(sightRange(FriendlyType, SightRange)) do {
+				%forall bel(FriendlyType = 'Zerg Mutalisk', enemy(EnemyId, EnemyType, EnemyVitality, EnemyX, EnemyY, EnemyRegionId, false),
+				%	(FriendlyX - EnemyX)**2 + (FriendlyY - EnemyY)**2 < SightRange) do
+				%		RemoveFromEnemySim(EnemyRegionId, EnemyType, EnemyVitality) +
+				%		delete(enemy(EnemyId, EnemyType, EnemyVitality, EnemyX, EnemyY, EnemyRegionId, false)).
+						
+				forall bel(enemy(EnemyId, EnemyType, EnemyVitality, EnemyX, EnemyY, EnemyRegionId, false),
+					(EnemyRegionId = FriendlyRegionId ; EnemyRegionId = 0), (FriendlyX - EnemyX)**2 + (FriendlyY - EnemyY)**2 < SightRange) do
+						RemoveFromEnemySim(FriendlyRegionId, EnemyType, EnemyVitality) +
+						delete(enemy(EnemyId, EnemyType, EnemyVitality, EnemyX, EnemyY, FriendlyRegionId, false)) +
+						(lurkers).send:(not(enemyDefense(EnemyId))).
+						
+				% If it's an update
+				if bel(not(friendly(FriendlyId, FriendlyType, FriendlyVitality, FriendlyRegionId)),
+					friendly(FriendlyId, FriendlyType, OldVitality, OldRegionId)) then
+						delete(friendly(FriendlyId, FriendlyType, OldVitality, OldRegionId)) +
+						insert(friendly(FriendlyId, FriendlyType, FriendlyVitality, FriendlyRegionId)) +
+						FriendlyUpdate(FriendlyType, FriendlyVitality, FriendlyRegionId, OldVitality, OldRegionId).
+						
+				% If it's a new unit
+				if bel(not(friendly(FriendlyId, _, _, _)), friendlySim(FriendlyRegionId, OGH, OAH, OGD, OAD, OBD),
+					addSim(FriendlyType, FriendlyVitality, OGH, OAH, OGD, OAD, OBD, NGH, NAH, NGD, NAD, NBD)) then
+						insert(friendly(FriendlyId, FriendlyType, FriendlyVitality, FriendlyRegionId)) +
+						delete(friendlySim(FriendlyRegionId, OGH, OAH, OGD, OAD, OBD)) +
+						insert(friendlySim(FriendlyRegionId, NGH, NAH, NGD, NAD, NBD)).
+		}
+		
+		if true then
+				(fighters).send?(statusUpdate).
+	}
+}

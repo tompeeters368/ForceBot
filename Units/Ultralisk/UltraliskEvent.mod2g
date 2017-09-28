@@ -1,0 +1,41 @@
+use Ultralisk as knowledge.
+use Modules.AttackTargetting as module.
+use Modules.CombatEvent as module.
+use Modules.DefendEvent as module.
+order = linearall.
+
+module UltraliskEvent {
+	%%%%%%%%%%%%%%% --------------------------------------- Percept Updating --------------------------------------- %%%%%%%%%%%%%%%
+	% Status updating
+	if percept(status(Health, _, _, Conditions, _, X, Y, RegionId)),
+		bel(not(status(Health, Conditions, X, Y, RegionId)), status(OldHealth, OldConditions, OldX, OldY, OldRegionId)) then {
+			if bel(RegionId \= 0) then
+				delete(status(OldHealth, OldConditions, OldX, OldY, OldRegionId)) +
+				insert(status(Health, Conditions, X, Y, RegionId)).
+				
+			if bel(RegionId = 0) then
+				delete(status(OldHealth, OldConditions, OldX, OldY, OldRegionId)) +
+				insert(status(Health, Conditions, X, Y, OldRegionId)).
+	}
+	
+	% Send status updates to the overmind when asked for
+	if (_).sent?(statusUpdate), bel(self(Id, Type), status(Health, _, X, Y, RegionId)) then
+		(battlemind).send:(friendly(Id, Type, Health, X, Y, RegionId)).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Messaging --------------------------------------- %%%%%%%%%%%%%%%
+	if (_).sent:(ownMain(X1, Y1, RegionId)) then
+		insert(ownMain(X1, Y1, RegionId)).
+		
+	forall (_).sent:(ownBase(X1, Y1, RegionId)) do
+		insert(ownBase(X1, Y1, RegionId)).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Event modules --------------------------------------- %%%%%%%%%%%%%%%
+	% Run the combat events
+	if true then CombatEvent.
+	
+	% Run attack module if needed
+	if goal(task('attack', _)) then AttackTargetting.
+	
+	% Run defend module if needed
+	if goal(task('defend', (X1, Y1, _))) then DefendEvent(X1, Y1).
+}

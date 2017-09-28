@@ -1,0 +1,8 @@
+use "../../BattleMind.pl" as knowledge.
+order = linear.
+
+module AddToEnemySim(RegionId, Type, Vitality) {
+	if bel(enemySim(RegionId, OGH, OAH, OGD, OAD, OBD), addSim(Type, Vitality, OGH, OAH, OGD, OAD, OBD, NGH, NAH, NGD, NAD, NBD)) then
+		delete(enemySim(RegionId, OGH, OAH, OGD, OAD, OBD)) +
+		insert(enemySim(RegionId, NGH, NAH, NGD, NAD, NBD)).
+}

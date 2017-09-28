@@ -1,0 +1,10 @@
+use "../Generic/Generic.pl" as knowledge.
+use "../Generic/GenericInit.mod2g" as module.
+order = linearall.
+
+module HatcheryInit {
+	if true then GenericInit.
+	
+	if percept(self(Id, _)), percept(status(_, _, _, _, _, X1, Y1, RegionId)), bel(X2 is X1 - 2, Y2 is Y1 - 1) then
+		(overmind).send:(ownBase(Id, X2, Y2, RegionId)).
+}

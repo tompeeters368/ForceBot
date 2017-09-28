@@ -1,0 +1,59 @@
+use BuildMind as knowledge.
+use BuildMind as actionspec.
+use PerceptUpdateDecision as module.
+use PlaceBuilding as module.
+order = linearall.
+
+module BuildMind {
+	%%%%%%%%%%%%%%% --------------------------------------- Updating percepts --------------------------------------- %%%%%%%%%%%%%%%
+	if true then PerceptUpdateDecision.
+
+	%%%%%%%%%%%%%%% --------------------------------------- General messaging --------------------------------------- %%%%%%%%%%%%%%%
+	% When receiving a new base location
+	forall (_).sent:(ownBase(X1, Y1, RegionId1)) do {
+		% The first base we receive is the main
+		if bel(not(ownBase(_, _, _))) then
+			insert(ownMain(X1, Y1, RegionId1)).
+		
+		% Add the base to the belief base and notify other units
+		if true then
+			insert(ownBase(X1, Y1, RegionId1)).
+	}
+	
+	% Insert new enemyBases
+	forall (_).sent:(enemyBase(X1, Y1, RegionId)), not(bel(enemyBase(X1, Y1, RegionId))) do
+		insert(enemyBase(X1, Y1, RegionId)).
+		
+	%%%%%%%%%%%%%%% --------------------------------------- OverMind messaging --------------------------------------- %%%%%%%%%%%%%%%
+	forall (_).sent:(buildRequestCompleted(Agent)) do {
+		if bel(buildRequest(Agent, Thing, RegionId)) then
+			delete(buildRequest(Agent, Thing, RegionId)).
+			
+		if bel(buildTarget(Agent, X, Y, RegionId)) then
+			delete(buildTarget(Agent, X, Y, RegionId)).
+	}
+		
+	forall (_).sent:(buildRequest(Agent, Thing, RegionId)) do {
+		if bel(RegionId = null, ownMain(_, _, MainId)) then
+			insert(buildRequest(Agent, Thing, MainId)).
+			
+		if bel(RegionId \= null) then
+			insert(buildRequest(Agent, Thing, RegionId)).
+	}
+		
+	forall (_).sent:(requestTransfer(OldAgent, NewAgent)), bel(buildRequest(OldAgent, Thing, RegionId)) do
+		delete(buildRequest(OldAgent, Thing, RegionId)) +
+		insert(buildRequest(NewAgent, Thing, RegionId)).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Determining buildLocations --------------------------------------- %%%%%%%%%%%%%%%
+	% If a buildTarget has become invalid, delete it
+	forall bel(buildRequest(Agent, Thing, RegionId), buildTarget(Agent, X, Y, RegionId), not(getValidConstructionSite(Agent, X, Y, _, Thing))) do
+		delete(buildTarget(Agent, X, Y, RegionId)).
+	
+	% If a drone needs a placement location, calculate it
+	forall bel(buildRequest(Agent, Thing, RegionId), not(buildTarget(Agent, _, _, _))) do
+		PlaceBuilding(Agent, Thing, RegionId).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Sleep --------------------------------------- %%%%%%%%%%%%%%%
+	if bel(gameframe(Frame), Frame > 5000) then sleep(2000).
+}

@@ -1,0 +1,19 @@
+use "../OverMind.pl" as knowledge.
+use AssignTaskToDrone as module.
+order = linear.
+
+module PlaceCreepColonyInRegion(RegionId) {
+	% From the current region if possible
+	if bel(task(DroneId, 'gatherMinerals', RegionId), agent(DroneId, Agent), mineralField(MineralId, _, _, RegionId)) then
+		AssignTaskToDrone(DroneId, Agent, 'build', 'Zerg Creep Colony', RegionId) +
+		(Agent).send:(mine(MineralId)).
+		
+	% Otherwise from a random region
+	if bel(task(DroneId, 'gatherMinerals', _), agent(DroneId, Agent), mineralField(MineralId, _, _, RegionId)) then
+		AssignTaskToDrone(DroneId, Agent, 'build', 'Zerg Creep Colony', RegionId) +
+		(Agent).send:(mine(MineralId)).
+		
+	% If we can't see a mineralField, don't bother with the mining switch
+	if bel(task(DroneId, 'gatherMinerals', _), agent(DroneId, Agent)) then
+		AssignTaskToDrone(DroneId, Agent, 'build', 'Zerg Creep Colony', RegionId).
+}

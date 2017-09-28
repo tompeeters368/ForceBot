@@ -1,0 +1,25 @@
+use Generic as knowledge.
+order = linearall.
+
+module GenericEvent {
+	%%%%%%%%%%%%%%% --------------------------------------- Research handling --------------------------------------- %%%%%%%%%%%%%%%
+	% Process research orders
+	forall (_).sent!(researchOrder(Thing)) do 
+		adopt(researching(Thing)).
+		
+	% Research percept processing
+	if percept(researching(Thing)), bel(not(researching(Thing))) then
+		drop(researching(Thing)) +
+		insert(researching(Thing)) +
+		(overmind).send:(researching(Thing)).
+
+	% Research completion notification	
+	if bel(researching(Thing)), not(percept(researching(Thing))) then
+		delete(researching(Thing)) +
+		(overmind).send:(researched(Thing)).
+				
+	%%%%%%%%%%%%%%% --------------------------------------- Morph handling --------------------------------------- %%%%%%%%%%%%%%%
+	% Process morph orders
+	forall (_).sent!(morphOrder(Thing)) do 
+		adopt(morphing(Thing)).
+}

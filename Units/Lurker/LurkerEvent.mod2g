@@ -1,0 +1,65 @@
+use "../Generic/Generic.act2g" as actionspec.
+use Lurker as knowledge.
+use Modules.AttackTargetting as module.
+use Modules.CombatPercepts as module.
+use Modules.CombatEvent as module.
+use Modules.DefendEvent as module.
+order = linearall.
+
+module LurkerEvent {	
+	%%%%%%%%%%%%%%% --------------------------------------- Determining when we finished burrowing --------------------------------------- %%%%%%%%%%%%%%%
+	if bel(burrowing), percept(status(_, _, _, C1, _, _, _, _)) then {
+		% When burrowing
+		if bel(member(burrowed, C1), status(_, C2, _, _, _), not(member(burrowed, C2))) then
+			delete(burrowing).
+		% When surfacing
+		if bel(not(member(burrowed, C1)), status(_, C2, _, _, _), member(burrowed, C2)) then
+			delete(burrowing).
+	}
+	
+	% When we're burrowing and receive a non-burrow order, cancel burrowing
+	if bel(burrowing), percept(order(Order, _, _, _, _)), bel(Order \= 'Burrowing', Order \= 'Unburrowing') then
+		delete(burrowing).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Percept Updating --------------------------------------- %%%%%%%%%%%%%%%
+	% Run the combat percepts
+	if true then CombatPercepts.
+	
+	% Status updating
+	if percept(status(Health, _, _, Conditions, _, X, Y, RegionId)),
+		bel(not(status(Health, Conditions, X, Y, RegionId)), status(OldHealth, OldConditions, OldX, OldY, OldRegionId)) then {
+			if bel(RegionId \= 0) then
+				delete(status(OldHealth, OldConditions, OldX, OldY, OldRegionId)) +
+				insert(status(Health, Conditions, X, Y, RegionId)).
+				
+			if bel(RegionId = 0) then
+				delete(status(OldHealth, OldConditions, OldX, OldY, OldRegionId)) +
+				insert(status(Health, Conditions, X, Y, OldRegionId)).
+	}
+	
+	% Send status updates to the overmind when asked for
+	if (_).sent?(statusUpdate), bel(self(Id, Type), status(Health, _, X, Y, RegionId)) then
+		(battlemind).send:(friendly(Id, Type, Health, X, Y, RegionId)).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Messaging --------------------------------------- %%%%%%%%%%%%%%%
+	if (_).sent:(ownMain(X1, Y1, RegionId)) then
+		insert(ownMain(X1, Y1, RegionId)).
+		
+	forall (_).sent:(ownBase(X1, Y1, RegionId)) do
+		insert(ownBase(X1, Y1, RegionId)).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Event modules --------------------------------------- %%%%%%%%%%%%%%%
+	% Run the combat events
+	if true then CombatEvent.
+	
+	% Run attack module if needed
+	if goal(task('attack', _)) then AttackTargetting.
+	
+	% Run defend module if needed
+	if goal(task('defend', (X1, Y1, _))) then DefendEvent(X1, Y1).
+		
+	%%%%%%%%%%%%%%% --------------------------------------- Debug --------------------------------------- %%%%%%%%%%%%%%%
+	%if bel(status(_, _, X1, Y1, _), enemyA(_, _, C2, X2, Y2, _, _), not(member(flying, C2)), distance(X1, Y1, X2, Y2, D12),
+	%	not((enemyA(_, _, C3, X3, Y3, _, _), not(member(flying, C3)), distance(X1, Y1, X3, Y3, D13), D13 < D12))) then
+	%		debugdraw(D12).
+}

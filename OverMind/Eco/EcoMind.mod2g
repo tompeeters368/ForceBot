@@ -1,0 +1,84 @@
+use "../OverMind.pl" as knowledge.
+use "../Routines/Morph.mod2g" as module.
+use "../Routines/SpendResources.mod2g" as module.
+use "../Drone/AssignTaskToDrone.mod2g" as module.
+order = linearall.
+
+/**
+* In charge of planning the training and timing of Drones/Overlords/Structures and other economy-related things.
+*/
+module EcoMind {
+	%%%%%%%%%%%%%%% --------------------------------------- Overlord Production --------------------------------------- %%%%%%%%%%%%%%%
+	% On-demand Overlord production
+	if	bel(not((timing(Timing, _, 'build'), Timing =< 9)), % Do not build our first Overlord yet
+		canCreate('Zerg Overlord'), resources(_, _, CurrentSupply, TotalSupply)),% Make sure we can train an Overlord
+		bel(totalUnitAmount('Zerg Drone', Drones), CapOffset is  1 + Drones/3, numberOfBases(TrainCap), % Based on current economy...
+		(CurrentSupply >= TotalSupply ; (CurrentSupply + CapOffset >= TotalSupply, TotalSupply >= 20)), % Make sure we're close to the current cap (totalSupply >= 20 for initial build order)
+		producingUnit('Zerg Overlord', Amount), (Amount < TrainCap ; CurrentSupply > TotalSupply), % Make sure we're not training more than the current cap based on economy
+		larva(Id, Agent, _), not(morphing(Id, _))) then % Find a larva to morph
+			Morph(Id, Agent, 'Zerg Overlord').
+			
+	%%%%%%%%%%%%%%% --------------------------------------- Morph Decider --------------------------------------- %%%%%%%%%%%%%%%
+	% Special rule for Lair/Hive morphing (main preferred)
+	if	bel(timing(DronesRequired, Thing, 'morph'), (Thing = 'Zerg Lair' ; Thing = 'Zerg Hive'), meetsDroneCount(DronesRequired)),
+		bel(canCreate(Thing), ownMain(X, Y, RegionId), ownBase(Id, X, Y, RegionId), not(morphing(Id, _)), agent(Id, Agent)) then
+			Morph(Id, Agent, Thing) +
+			delete(timing(DronesRequired, Thing, 'morph')).
+				
+	% Other morphs
+	if	bel(timing(DronesRequired, Thing, 'morph'), meetsDroneCount(DronesRequired)), bel(canCreate(Thing),
+			morph(Thing, Morpher, _, _), friendly(Id, Morpher), not(morphing(Id, _)), agent(Id, Agent)) then
+				Morph(Id, Agent, Thing) +
+				delete(timing(DronesRequired, Thing, 'morph')).
+				
+	%%%%%%%%%%%%%%% --------------------------------------- Train Decider --------------------------------------- %%%%%%%%%%%%%%%
+	forall bel(timing(DronesRequired, Thing, 'train'), meetsDroneCount(DronesRequired)) do {
+		if bel(canCreate(Thing),
+			larva(Id, Agent, _), not(morphing(Id, _))) then
+				Morph(Id, Agent, Thing) +
+				delete(timing(DronesRequired, Thing, 'train')).
+	}
+				
+	%%%%%%%%%%%%%%% --------------------------------------- Build Decider --------------------------------------- %%%%%%%%%%%%%%%
+	% Construct a building
+	if	bel(timing(DronesRequired, Thing, 'build'), meetsDroneCount(DronesRequired)),
+		bel(canCreate(Thing), ownMain(_, _, RegionId)) then {
+			% If there are no drones in the main, pick a random one
+			if bel(not(task(_, 'gatherMinerals', RegionId)), task(Id, 'gatherMinerals', _), agent(Id, Agent)) then
+					AssignTaskToDrone(Id, Agent, 'build', Thing, null) +
+					delete(timing(DronesRequired, Thing, 'build')).
+				
+			% If there is a drone in the main, use it
+			if bel(task(Id, 'gatherMinerals', RegionId), task(Id, 'gatherMinerals', _), agent(Id, Agent)) then {
+				if true then
+					AssignTaskToDrone(Id, Agent, 'build', Thing, null) +
+					delete(timing(DronesRequired, Thing, 'build')).
+					
+				% Special code for Extractor placement on main
+				if	bel(Thing = 'Zerg Extractor', vespeneGeyser(_, X1, Y1, RegionId)) then
+						insert(buildTarget(Id, X1, Y1, RegionId)) +
+						(Agent).send!(buildTarget(X1, Y1, RegionId)).
+			}
+						
+	}
+	
+	% Expand a base
+	if	bel(timing(DronesRequired, Thing, 'expand'), meetsDroneCount(DronesRequired)), bel(canCreate(Thing),
+			friendly(Id, 'Zerg Drone'), task(Id, 'gatherMinerals', _), agent(Id, Agent)) then
+				AssignTaskToDrone(Id, Agent, 'expand', Thing, null) +
+				delete(timing(DronesRequired, Thing, 'expand')).
+			
+	%%%%%%%%%%%%%%% --------------------------------------- Morph Drone --------------------------------------- %%%%%%%%%%%%%%%
+	% Always be training at least 1 Drone for each base controlled
+	if	bel(canCreate('Zerg Drone'), not((timing(Amount, _, _), Amount > 0)), producingUnit('Zerg Drone', DroneAmount), gameframe(Frame)),
+		bel((Frame >= 10000, numberOfBases(BaseAmount), DroneAmount < BaseAmount) ; (Frame < 10000, DroneAmount < 1)),
+		bel(minersMinerals(RegionId, Miners), mineralPatches(RegionId, Patches), Miners < Patches * 2),
+		bel(larva(Id, Agent, RegionId), not(morphing(Id, _))) then
+			Morph(Id, Agent, 'Zerg Drone').
+	
+	% Morph a drone when we need it for the build order
+	if	bel(timing(DronesRequired, _, _), not((timing(DronesRequired2, _, _), DronesRequired2 < DronesRequired))),
+		bel(totalUnitAmount('Zerg Drone', Drones), Drones < DronesRequired),
+		bel(canCreate('Zerg Drone'), larva(Id, Agent, _), not(morphing(Id, _))) then
+			Morph(Id, Agent, 'Zerg Drone').
+}

@@ -1,0 +1,17 @@
+use "../../Generic/Generic.act2g" as actionspec.
+use "../../Generic/Generic.pl" as knowledge.
+use "../Mutalisk.pl" as knowledge.
+order = linearall.
+exit = always.
+
+module Backoff(Orientation, X1, Y1) {
+	if true then sleep(1).
+	%if bel(Radians is (Orientation + 180) / 180 * pi, X2 is X1 + 7 * cos(Radians), Y2 is Y1 + 7 * sin(Radians), mapClamp(X2, Y2, X3, Y3)) then
+	%		move(X3, Y3).
+	%
+	%if bel(currentTarget(X2, Y2)) then
+	%	delete(currentTarget(X2, Y2)).
+	%	
+	%if true then
+	%	insert(backingoff).
+}

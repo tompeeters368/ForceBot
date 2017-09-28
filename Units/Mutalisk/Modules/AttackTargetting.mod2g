@@ -1,0 +1,26 @@
+use "../Mutalisk.pl" as knowledge.
+use "../../CombatModules/UpdateClosest.mod2g" as module.
+order = linear.
+
+/**
+* In charge of finding the closest enemy according to priorities
+*/
+module AttackTargetting {
+	%%%%%%%%%%%%%%% --------------------------------------- Attack Order Decision Making --------------------------------------- %%%%%%%%%%%%%%%
+	if bel(status(_, _, X1, Y1, RegionId), regionOrder(RegionId, _, Order), Order \= 'retreat') then {
+		% Attack closest threatening unit
+		forall percept(enemy(Id, T2, _, _, _, C2, _, X2, Y2, R2)),
+			bel(canAttackAir(T2), member(detected, C2), not(regionOrder(R2, _, 'retreat')), distanceSq(X1, Y1, X2, Y2, D12), D12 < 900) do
+				UpdateClosest(Id, X2, Y2, D12, 1).
+				
+		% Attack non-threatening unit
+		forall percept(enemy(Id, T2, _, _, _, C2, _, X2, Y2, R2)),
+			bel(not(isBuilding(T2)), member(detected, C2), not(regionOrder(R2, _, 'retreat')), distanceSq(X1, Y1, X2, Y2, D12), D12 < 900) do
+				UpdateClosest(Id, X2, Y2, D12, 2).
+				
+		% Attack building
+		forall percept(enemy(Id, T2, _, _, _, _, _, X2, Y2, R2)),
+			bel(isBuilding(T2), not(regionOrder(R2, _, 'retreat')), distanceSq(X1, Y1, X2, Y2, D12), D12 < 900) do
+				UpdateClosest(Id, X2, Y2, D12, 3).
+	}
+}

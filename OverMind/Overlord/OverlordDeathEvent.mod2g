@@ -1,0 +1,19 @@
+use "../OverMind.pl" as knowledge.
+use AssignTaskToOverlord as module.
+order = linearall.
+
+/**
+* Responsible for handling when an Overlord dies.
+*/
+module OverlordDeathEvent(Id) {
+	if bel(overlordOrder(Id, Order, (X1, Y1, RegionId)), (Order = 'scout' ; Order = 'watch')) then
+		insert(baseIsDangerous(X1, Y1, RegionId)) +
+		(battlemind).send:(baseIsDangerous(X1, Y1, RegionId)) +
+		(buildmind).send:(baseIsDangerous(X1, Y1, RegionId)).
+		
+	if bel(overlordOrder(Id, 'escort', null)), bel(overlordOrder(OtherId, 'watch', _), agent(OtherId, Agent)) then
+		AssignTaskToOverlord(OtherId, Agent, 'escort', null, null, null).
+		
+	if bel(overlordOrder(Id, Order, Target)) then
+		delete(overlordOrder(Id, Order, Target)).
+}

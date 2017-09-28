@@ -1,0 +1,48 @@
+use "../../OverMind.pl" as knowledge.
+use "../../Routines/FreeResources.mod2g" as module.
+use "../../Overlord/OverlordDeathEvent.mod2g" as module.
+use "../../Drone/DroneDeathEvent.mod2g" as module.
+order = linearall.
+
+module DeathEvent(Id, Type) {
+	% Decrement unitAmount
+	if bel(unitAmount(Type, OldAmount), NewAmount is OldAmount - 1) then
+		delete(unitAmount(Type, OldAmount)) +
+		insert(unitAmount(Type, NewAmount)).
+		
+	% Handle drone-related tasks
+	if bel(Type = 'Zerg Drone', task(Id, Task, Target)) then
+		DroneDeathEvent(Id, Task, Target).
+		
+	% If the unit was set to morph, undo the effects
+	if bel(morphing(Id, NewType)) then
+		delete(morphing(Id, NewType)) +
+		FreeResources(NewType).
+		
+	% Clear location belief
+	if bel(extractorRegion(Id, RegionId)) then
+		delete(extractorRegion(Id, RegionId)).
+		
+	% Clear larva belief when a larva is killed
+	if bel(larva(Id, Agent, RegionId)) then
+		delete(larva(Id, Agent, RegionId)).
+		
+	% Clear agent belief
+	if bel(agent(Id, Agent)) then
+		delete(agent(Id, Agent)).
+		
+	% Clear ownBase when a base is destroyed
+	if bel((Type = 'Zerg Hatchery' ; Type = 'Zerg Lair' ; Type = 'Zerg Hive'), ownBase(Id, X, Y, RegionId),
+		numberOfBases(OldBases), NewBases is OldBases - 1,
+		numberOfHatcheries(OldHatcheries), NewHatcheries is OldHatcheries + 1) then
+			delete(numberOfBases(OldBases)) +
+			insert(numberOfBases(NewBases)) +
+			delete(numberOfHatcheries(OldHatcheries)) +
+			insert(numberOfHatcheries(NewHatcheries)) +
+			delete(ownBase(Id, X, Y, RegionId)) +
+			allother.send:(not(ownBase(X, Y, RegionId))).
+			
+	% Handle Overlord death
+	if bel(Type = 'Zerg Overlord') then
+		OverlordDeathEvent(Id).
+}

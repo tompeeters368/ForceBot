@@ -1,0 +1,15 @@
+use "../../BattleMind.pl" as knowledge.
+use EnemySimMove as module.
+order = linear.
+
+module EnemyUpdate(Type, Vitality, RegionId, OldType, OldVitality, OldRegionId) {
+	% If the unit changed RegionId or type
+	if bel(RegionId \= OldRegionId ; Type \= OldType) then
+			EnemySimMove(Type, Vitality, RegionId, OldType, OldVitality, OldRegionId).
+			
+	% If only the health changed
+	if bel(enemySim(RegionId, OGH, OAH, GD, AD, BD),
+		(isFlyingUnit(Type) -> (NGH is OGH, NAH is OAH + Vitality - OldVitality) ; (NGH is OGH + Vitality - OldVitality, NAH is OAH))) then
+			delete(enemySim(RegionId, OGH, OAH, GD, AD, BD)) +
+			insert(enemySim(RegionId, NGH, NAH, GD, AD, BD)).
+}

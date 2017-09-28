@@ -1,0 +1,231 @@
+use OverMind as knowledge.
+use OverMind as actionspec.
+use Routines.Morph as module.
+use Drone.DroneModule as module.
+use Drone.AssignTaskToDrone as module.
+use Drone.PlaceCreepColonyInRegion as module.
+use Drone.TransferDroneToGas as module.
+use Eco.EcoMind as module.
+use Fight.FightMind as module.
+use Overlord.OverlordModule as module.
+use Percepts.OverMindEvents as module.
+use Percepts.OverMindPercepts as module.
+use Research.ResearchEvents as module.
+use Strategy.ChangeStrategy as module.
+use Strategy.EnemyRaceDiscovery as module.
+use SliceLarge as module.
+order = linearall.
+
+module OverMind {		
+	%%%%%%%%%%%%%%% --------------------------------------- Updating --------------------------------------- %%%%%%%%%%%%%%%
+	if true then OverMindEvents.
+	if true then ResearchEvents.
+	if true then OverMindPercepts.
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Forfeiting --------------------------------------- %%%%%%%%%%%%%%%
+	% Forfeit if we have no units alive
+	if bel(resources(_, _, 0, _)) then forfeit.
+	
+	% Forfeit if we have no drones and less than 50 minerals
+	if bel(resources(Minerals, _, _, _), Minerals < 50, totalUnitAmount('Zerg Drone', 0)) then forfeit.
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Messaging --------------------------------------- %%%%%%%%%%%%%%%
+	% Remove dangerous place once it's been cleared
+	if (_).sent:(cleared(X, Y)), bel(baseIsDangerous(X, Y, RegionId)) then
+		(battlemind).send:(cleared(X, Y)) +
+		delete(baseIsDangerous(X, Y, RegionId)).
+		
+	forall (_).sent:(regionUnderAttack(RegionId)), bel(not(regionUnderAttack(RegionId))) do
+		insert(regionUnderAttack(RegionId)).
+		
+	forall (_).sent:(not(regionUnderAttack(RegionId))), bel(regionUnderAttack(RegionId)) do
+		delete(regionUnderAttack(RegionId)).
+		
+	if (_).sent:(enemyRace(Race)), bel(enemyRace('unknown')) then
+		delete(enemyRace('unknown')) +
+		insert(enemyRace(Race)).% +
+		%EnemyRaceDiscovery(Race).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Unit messaging --------------------------------------- %%%%%%%%%%%%%%%
+	% When receiving a new base location
+	forall (_).sent:(ownBase(Id, X1, Y1, RegionId1)) do {		
+		% Drop the goal to scout the base
+		if bel(scout(X1, Y1, RegionId1)) then delete(scout(X1, Y1, RegionId1)).
+		
+		% The first base we receive is the main
+		if not(bel(ownBase(_, _, _, _))) then {
+			if true then
+				insert(ownMain(X1, Y1, RegionId1)).
+			
+			% Determine natural, drop goal to scout it
+			if bel(chokepoint(_, _, _, _, RegionId1, RegionId2), base(_, _, _, X2, Y2, RegionId2), distanceSq(X1, Y1, X2, Y2, D12),
+				not((chokepoint(_, _, _, _, RegionId1, RegionId3), base(_, _, _, X3, Y3, RegionId3), distanceSq(X1, Y1, X3, Y3, D13), D13 < D12))) then
+					insert(ownNatural(X2, Y2, RegionId2)) +
+					delete(scout(X2, Y2, RegionId2)).
+			
+			% If no natural was found (Fighting Spirit)
+			if bel(not(ownNatural(_, _, _)), base(_, _, _, X2, Y2, RegionId2), distanceSq(X1, Y1, X2, Y2, D12),
+				not((base(_, _, _, X3, Y3, _), distanceSq(X1, Y1, X3, Y3, D13), D13 < D12))) then
+					insert(ownNatural(X2, Y2, RegionId2)) +
+					delete(scout(X2, Y2, RegionId2)).
+		}
+		
+		% Store number of bases
+		if bel(base(_, _, _, X1, Y1, RegionId1), numberOfBases(OldAmount), NewAmount is OldAmount + 1) then
+			delete(numberOfBases(OldAmount)) +
+			insert(numberOfBases(NewAmount)).
+		
+		% Defend the natural
+		if bel(ownNatural(X1, Y1, RegionId1)) then
+			PlaceCreepColonyInRegion(RegionId1) +
+			PlaceCreepColonyInRegion(RegionId1) +
+			PlaceCreepColonyInRegion(RegionId1).
+		
+		% Create the minersMinerals percept as required
+		if not(bel(minersMinerals(RegionId1, _))) then
+			insert(minersMinerals(RegionId1, 0)).
+			
+		% Add the base to the belief base and notify other units
+		if true then
+			insert(ownBase(Id, X1, Y1, RegionId1)) +
+			allother.send:(ownBase(X1, Y1, RegionId1)).
+	}
+	
+	% Insert new enemyBases
+	forall (_).sent:(enemyBase(X1, Y1, RegionId1)) do {
+		if bel(not(enemyMain(_, _, _)), base(true, _, _, X1, Y1, RegionId1)) then {
+			if true then
+				insert(enemyMain(X1, Y1, RegionId1)) +
+				(overlords).send:(enemyMain(X1, Y1, RegionId1)).
+			% Determine natural
+			if bel(chokepoint(_, _, _, _, RegionId1, RegionId2), base(_, _, _, X2, Y2, RegionId2), distance(X1, Y1, X2, Y2, D12),
+				not((chokepoint(_, _, _, _, RegionId1, RegionId3), base(_, _, _, X3, Y3, RegionId3), distance(X1, Y1, X3, Y3, D13), D13 < D12))) then
+					insert(enemyNatural(X2, Y2, RegionId2)).
+		}
+		
+		if bel(not(enemyBase(X1, Y1, RegionId1))) then 
+			(battlemind).send(enemyBase(X1, Y1, RegionId1)) +
+			(buildmind).send(enemyBase(X1, Y1, RegionId1)) +
+			insert(enemyBase(X1, Y1, RegionId1)).
+	}
+
+	% Insert new agent beliefs
+	forall (Agent).sent:(agent(Id)) do
+		insert(agent(Id, Agent)).
+		
+	% Reply to requests for basic knowledge
+	forall (Agent).sent?(unitKnowledge(Id, Type)) do {
+		% Send own base info
+		%forall bel(ownBase(_, X, Y, RegionId)) do
+		%	(Agent).send:(ownBase(X, Y, RegionId)).
+		
+		% Send morph to Lurker order if applicable
+		if bel(Type = 'Zerg Hydralisk', researchLevel('Lurker Aspect', 1), not(morphing(_, 'Zerg Lurker'))) then
+				Morph(Id, Agent, 'Zerg Lurker').
+		
+		if bel(gameframe(Frame), Frame < 3000, Type = 'Zerg Zergling') then {
+			if true then
+				(Agent).send!(task('suicide', null)).
+			if bel(enemyMain(X1, Y1, RegionId)) then
+				(Agent).send:(enemyMain(X1, Y1, RegionId)).
+			forall bel(base(true, _, _, X1, Y1, RegionId), not(ownBase(_, _, _, RegionId))) do
+				(Agent).send:(base(X1, Y1, RegionId)).
+		}
+	}
+	
+	forall (Agent).sent?(enemyMain), bel(enemyMain(X1, Y1, RegionId)) do
+		(Agent).send:(enemyMain(X1, Y1, RegionId)).
+	
+	% Reply to requests for mineralBlocks
+	forall (Agent).sent?(mineralBlocks), bel(mineralBlock(MineralId, X, Y, RegionId)) do
+		(Agent).send:(mineralBlock(MineralId, X, Y, RegionId)).
+	
+	% Reply to requests for ownMain location
+	forall (Agent).sent?(ownMain), bel(ownMain(X1, Y1, RegionId)) do
+		(Agent).send:(ownMain(X1, Y1, RegionId)).
+
+	% Store received locations of units
+	forall (_).sent:(extractorRegion(Id, RegionId)) do
+		insert(extractorRegion(Id, RegionId)) +
+		TransferDroneToGas.
+	
+	% Store regions of larva's
+	forall (Agent).sent:(larva(Id, RegionId)) do
+		insert(larva(Id, Agent, RegionId)).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Miscellaneous decision making --------------------------------------- %%%%%%%%%%%%%%%
+	% TODO: Better decision making for constructing additional hatcheries
+	if bel(not(task(_, 'Zerg Hatchery', 'build')), not((timing(DroneCount, _, _), DroneCount > 0)), not(timing(_, _, 'expand')),
+		totalUnitAmount('Zerg Drone', Amount), Amount > 9, effectiveResources(Min, _, _, _), Min > 300),
+		bel(numberOfHatcheries(Count), currentStrategy(_, _, DronesPerHatchery), Count + 1 < Amount / DronesPerHatchery),
+		bel(not(currentStrategy('Zerglings', _, _)) ; Count < 3) then
+			insert(timing(0, 'Zerg Hatchery', 'build')).
+	
+	% Decides when an Extractor should be built
+	forall bel(not(gasLock), resources(Minerals, Gas, _, _), Gas < Minerals, vespeneGeyser(GeyserId, X, Y, RegionId), not(ownMain(_, _, RegionId))),
+		bel(not(minersGas(GeyserId, _)), not(underConstruction(GeyserId, _, _, _, _)), not(buildTarget(_, X, Y, RegionId))) do {
+			if	bel(minersMinerals(RegionId, Miners), mineralPatches(RegionId, Patches), Miners > Patches),
+				bel(friendly(Id, 'Zerg Drone'), task(Id, 'gatherMinerals', RegionId), agent(Id, Agent)) then
+					AssignTaskToDrone(Id, Agent, 'build', 'Zerg Extractor', null) +
+					insert(buildTarget(Id, X, Y, RegionId)) +
+					(Agent).send!(buildTarget(X, Y, RegionId)).
+	}
+	
+	% If doing a 5-pool and we have 7 Drones, make sure we train 3 Zerglings
+	if bel((openingUsed('ZVT_5Pool') ; openingUsed('ZVP_5Pool')), not(completed5Pool)) then {
+		if bel(totalUnitAmount('Zerg Drone', 6)) then {
+			forall bel(larva(Id, Agent, _), not(morphing(Id, _))) do
+						Morph(Id, Agent, 'Zerg Zergling').
+		}
+		if bel(producingUnit('Zerg Zergling', 6)) then
+			insert(completed5Pool) +
+			insert(timing(0, 'Zerg Overlord', 'train')).
+	}
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Enemy spotting --------------------------------------- %%%%%%%%%%%%%%%
+	% Switch to muta's when spotting vultures
+	if (_).sent:(vultureSpotted) then
+		insert(vultureSpotted) +
+		ChangeStrategy('Mutalisks').
+		
+	% Switch to muta's when spotting siege tanks
+	if (_).sent:(siegeTankSpotted) then
+		insert(siegeTankSpotted) +
+		ChangeStrategy('Mutalisks').
+		
+	% Switch to hydra's when spotting carriers
+	if (_).sent:(carrierSpotted) then
+		insert(carrierSpotted) +
+		ChangeStrategy('Hydralisks').
+		
+	%%%%%%%%%%%%%%% --------------------------------------- Morph Timings --------------------------------------- %%%%%%%%%%%%%%%
+	% Morph Creep Colonies
+	if bel(friendly(Id, 'Zerg Creep Colony'), friendly(_, 'Zerg Spawning Pool'), not(morphing(Id, _)), agent(Id, Agent)) then
+			Morph(Id, Agent, 'Zerg Sunken Colony').
+			
+	%%%%%%%%%%%%%%% --------------------------------------- Other Modules --------------------------------------- %%%%%%%%%%%%%%%
+	if true then EcoMind.
+	if true then DroneModule.
+	if true then OverlordModule.
+	if bel(friendly(_, 'Zerg Spawning Pool')) then FightMind.
+		
+	%%%%%%%%%%%%%%% --------------------------------------- Finalizing --------------------------------------- %%%%%%%%%%%%%%%
+	% Store the new gameframe
+	if percept(gameframe(NewFrames)), bel(gameframe(OldFrames)) then
+		delete(gameframe(OldFrames)) +
+		insert(gameframe(NewFrames)).
+	%% Small slice every 2 seconds of in-game time
+	%if percept(gameframe(NewFrames)), bel(sliceSmall(OldFrames), OldFrames + 48 < NewFrames) then
+	%	delete(gameframe100(OldFrames)) +
+	%	insert(gameframe100(NewFrames)) +
+	%	SliceSmall(OldFrame, NewFrame).
+	% Large slice every 10 seconds of in-game time
+	if percept(gameframe(NewFrames)), bel(sliceLarge(OldFrames), OldFrames + 240 < NewFrames) then
+		delete(sliceLarge(OldFrames)) +
+		insert(sliceLarge(NewFrames)) +
+		SliceLarge(OldFrames, NewFrames).
+	
+	% Debug
+	%if bel(effectiveResources(Minerals, Gas, _, _)), bel(atomic_list_concat(['Minerals: ', Minerals, ' Gas: ', Gas], String)) then
+	%	debugdraw(String).
+}

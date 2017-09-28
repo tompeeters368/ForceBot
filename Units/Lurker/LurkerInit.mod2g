@@ -1,0 +1,22 @@
+use Lurker as knowledge.
+order = linearall.
+
+module LurkerInit {
+	if true then
+		subscribe(lurkers) +
+		subscribe(fighters) +
+		subscribe(fighterTasks).
+		
+	if percept(self(Id, Type)), percept(status(Health, _, _, Conditions, _, X, Y, RegionId)) then
+		insert(self(Id, Type)) +
+		insert(status(Health, Conditions, X, Y, RegionId)) +
+		(overmind).send?(unitKnowledge(Id, Type)).
+	
+	% Map percept
+	if percept(map(Width, Height)) then
+		insert(map(Width, Height)).
+	
+	if true then
+		(battlemind).send?(taskRequest) +
+		(battlemind).send?(enemyDefense).
+}

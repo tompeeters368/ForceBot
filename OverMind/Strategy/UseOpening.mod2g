@@ -1,0 +1,15 @@
+use "../OverMind.pl" as knowledge.
+use ChangeStrategy as module.
+order = linearall.
+
+module UseOpening(Name) {
+	if bel(opening(Name, Sequence, Strategy)) then {
+		forall bel(nth0(_, Sequence, timing(DroneCount, Thing, Task))) do
+			insert(timing(DroneCount, Thing, Task)).
+		
+		if true then
+			insert(openingUsed(Name)) +
+			ChangeStrategy(Strategy) +
+			(battlemind).send:(openingUsed(Name)).
+	}
+}

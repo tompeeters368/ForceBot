@@ -1,0 +1,35 @@
+use Drone as knowledge.
+
+module DroneDefense {
+	% Only store enemies if under attack
+	if percept(status(_, _, _, C1, _, _, _, RegionId)), bel(member(underAttack, C1)) then {
+		% Only store enemies in the same region
+		forall percept(enemy(Id, _, _, _, _, _, _, X2, Y2, RegionId)) do {
+			% If already inserted, update
+			if bel(not(enemy(Id, X2, Y2)), enemy(Id, X3, Y3)) then
+				delete(enemy(Id, X3, Y3)) +
+				insert(enemy(Id, X2, Y2)).
+			% If not yet inserted, do so
+			if bel(not(enemy(Id, X2, Y2))) then
+				insert(enemy(Id, X2, Y2)).
+		}
+	}
+	
+	% Delete enemies that are no longer in the base region
+	forall bel(enemy(Id, X1, Y1), defenseRegion(RegionId)), not(percept(enemy(Id, _, _, _, _, _, _, _, _, RegionId))) do
+		delete(enemy(Id, X1, Y1)).
+		
+	% Drop the target once we no longer see enemies
+	if bel(not(enemy(_, _, _))), goal(target(Order, Target)) then
+		drop(target(Order, Target)).
+		
+	% If we receive the order to disable defense, drop/delete all relevant beliefs/goals
+	if (_).sent!(disableDroneDefense) then {
+		forall bel(enemy(Id, X1, Y1)) do
+			delete(enemy(Id, X1, Y1)).
+		if goal(target(Order, Target)) then
+			drop(target(Order, Target)).
+		if true then 
+			insert(disableDroneDefense).
+	}
+}

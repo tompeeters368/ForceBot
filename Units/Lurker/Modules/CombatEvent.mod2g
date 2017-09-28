@@ -1,0 +1,51 @@
+use "../Lurker.pl" as knowledge.
+order = linearall.
+
+module CombatEvent {
+	%%%%%%%%%%%%%%% --------------------------------------- Messaging --------------------------------------- %%%%%%%%%%%%%%%
+	% Processing the tasks
+	forall (_).sent!(task(Order, Target)) do {		
+		% Clean up leftover beliefs
+		if bel(retreating) then delete(retreating).
+		if bel(defending) then delete(defending).	
+		if goal(task(OldOrder, OldTarget)) then drop(task(OldOrder, OldTarget)).
+		
+		% Adopt new task
+		if true then adopt(task(Order, Target)).
+	}
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Enemy Targetting --------------------------------------- %%%%%%%%%%%%%%%
+	% Deleting when enemy is gone
+	if bel(closestEnemy(Id, X1, Y1, Distance)),
+		not(percept(enemy(Id, _, _, _, _, _, _, _, _, _))) then
+			delete(closestEnemy(Id, X1, Y1, Distance)).
+	
+	% Updating the distance when it has changed
+	if bel(closestEnemy(Id, X1, Y1, Distance), status(_, _, X2, Y2, _)),
+		percept(enemy(Id, _, _, _, _, _, _, X3, Y3, _)),
+		bel(distanceSq(X2, Y2, X3, Y3, D23), (D23 \= Distance ; X1 \= X3 ; Y1 \= Y3)) then
+			delete(closestEnemy(Id, X1, Y1, Distance)) +
+			insert(closestEnemy(Id, X3, Y3, D23)).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Building Targetting --------------------------------------- %%%%%%%%%%%%%%%
+	% Deleting when enemy is gone
+	if bel(closestBuilding(Id, X1, Y1, Distance)),
+		not(percept(enemy(Id, _, _, _, _, _, _, _, _, _))) then
+			delete(closestBuilding(Id, X1, Y1, Distance)).
+			
+	% Deleting when the enemy has taken flight
+	if bel(closestBuilding(Id, X1, Y1, Distance)),
+		percept(enemy(Id, _, _, _, _, C3, _, _, _, _), member(flying, C3)) then
+			delete(closestBuilding(Id, X1, Y1, Distance)).
+	
+	% Updating the distance when it has changed
+	if bel(closestBuilding(Id, X1, Y1, Distance)), percept(status(_, _, _, _, _, X2, Y2, _)),
+		bel(distanceSq(X1, Y1, X2, Y2, D12), D12 \= Distance) then
+			delete(closestBuilding(Id, X1, Y1, Distance)) +
+			insert(closestBuilding(Id, X1, Y1, D12)).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Clearing --------------------------------------- %%%%%%%%%%%%%%%
+	% Area cleared
+	if goal(task('attack', (X1, Y1, RegionId))), bel(status(_, _, X1, Y1, _)), not(percept(enemy(_, _, _, _, _, _, _, _, _, RegionId))) then
+		(battlemind).send:(cleared(X1, Y1)).
+}

@@ -1,0 +1,58 @@
+use "../OverMind.pl" as knowledge.
+order = linearall.
+
+/**
+* Responsible for percepts.
+*/
+module OverMindPercepts {
+	%%%%%%%%%%%%%%% --------------------------------------- Percept messaging --------------------------------------- %%%%%%%%%%%%%%%
+	% Insert/Delete mineralBlocks (only bother when someone is expanding)
+	if bel(task(_, 'expand', _)) then {
+		forall bel(mineralBlock(Id, X1, Y1, RegionId)), not(percept(mineralField(Id, _, _, _, _))) do
+			delete(mineralBlock(Id, X1, Y1, RegionId)) +
+			(expanders).send:(not(mineralBlock(Id))).
+			
+		forall percept(mineralField(Id, 0, X1, Y1, RegionId1)), bel(not(mineralBlock(Id, X1, Y1, RegionId1))) do
+			insert(mineralBlock(Id, X1, Y1, RegionId1)) +
+			(expanders).send:(mineralBlock(Id, X1, Y1, RegionId1)).
+	}
+	
+	if percept(mineralField(_, 0, X1, Y1, RegionId1)),
+		bel(chokepoint(X2, Y2, X3, Y3, RegionId1, RegionId2), X4 is (X2 + X3) / 2, Y4 is (Y2 + Y3) / 2,
+		distanceSq(X1, Y1, X4, Y4, D14), D14 < 9, not(chokepointBlocked(RegionId1, RegionId2))) then
+			insert(chokepointBlocked(RegionId1, RegionId2)) +
+			(battlemind).send:(chokepointBlocked(RegionId1, RegionId2)).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- if Percept Updating --------------------------------------- %%%%%%%%%%%%%%%
+	% resources percept
+	if percept(resources(Minerals, Gas, CurrentSupply, TotalSupply)), bel(resources(OldMinerals, OldGas, OldCurrentSupply, OldTotalSupply)) then
+		delete(resources(OldMinerals, OldGas, OldCurrentSupply, OldTotalSupply)) +
+		insert(resources(Minerals, Gas, CurrentSupply, TotalSupply)).
+		
+	%%%%%%%%%%%%%%% --------------------------------------- forall Percept Updating --------------------------------------- %%%%%%%%%%%%%%%
+	% friendly percepts
+	forall bel(friendly(Id, Type)), not(percept(friendly(Id, Type))) do
+		delete(friendly(Id, Type)).
+	forall percept(friendly(Id, Type)), not(bel(friendly(Id, Type))), not(percept(underConstruction(Id, _, _, _, _))) do
+		insert(friendly(Id, Type)).
+		
+	% vespeneGeyser percepts
+	forall bel(vespeneGeyser(FieldId, X, Y, RegionId)), not(percept(vespeneGeyser(FieldId, _, X, Y, RegionId))) do
+		delete(vespeneGeyser(FieldId, X, Y, RegionId)).
+	forall percept(vespeneGeyser(FieldId, _, X, Y, RegionId)), not(bel(vespeneGeyser(FieldId, X, Y, RegionId))) do
+		insert(vespeneGeyser(FieldId, X, Y, RegionId)).
+
+	% mineralField percepts
+	forall bel(mineralField(Id, X, Y, RegionId)), not(percept(mineralField(Id, _, X, Y, RegionId))), bel(mineralFieldN(Id, X, Y, RegionId, N)) do
+		delete(mineralField(Id, X, Y, RegionId)) +
+		delete(mineralFieldN(Id, X, Y, RegionId, N)).
+	forall percept(mineralField(Id, Amount, X, Y, RegionId), Amount > 0), bel(not(mineralField(Id, X, Y, RegionId))) do
+		insert(mineralField(Id, X, Y, RegionId)) +
+		insert(mineralFieldN(Id, X, Y, RegionId, 2)).
+	
+	% underConstruction percepts
+	forall bel(underConstruction(Id, Type, X, Y, RegionId)), not(percept(underConstruction(Id, _, _, _, _))) do
+		delete(underConstruction(Id, Type, X, Y, RegionId)).
+	forall percept(underConstruction(Id, _, X, Y, RegionId)), percept(friendly(Id, Type)), bel(not(underConstruction(Id, _, _, _, _))) do
+		insert(underConstruction(Id, Type, X, Y, RegionId)).
+}

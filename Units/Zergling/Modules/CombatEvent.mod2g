@@ -1,0 +1,51 @@
+use "../Zergling.pl" as knowledge.
+order = linearall.
+
+module CombatEvent {
+	%%%%%%%%%%%%%%% --------------------------------------- Messaging --------------------------------------- %%%%%%%%%%%%%%%
+	% Processing the regionOrders
+	forall (_).sent:(regionOrder(Source, Target, Order)) do {
+		if bel(regionOrder(Source, OldTarget, OldOrder)) then
+			delete(regionOrder(Source, OldTarget, OldOrder)).
+		
+		if true then
+			insert(regionOrder(Source, Target, Order)).
+	}
+	
+	% Processing the tasks
+	if not(goal(task('suicide', _))) then {
+		forall (_).sent!(task(Order, Target)) do {		
+			% Clean up leftover beliefs
+			if bel(retreating) then delete(retreating).
+			if bel(defending) then delete(defending).	
+			if goal(task(OldOrder, OldTarget)) then drop(task(OldOrder, OldTarget)).
+			
+			% Adopt new task
+			if true then adopt(task(Order, Target)).
+		}
+	}
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Enemy Targetting --------------------------------------- %%%%%%%%%%%%%%%
+	% Deleting when enemy is gone
+	if bel(closestEnemy(Id, X, Y, Distance, Priority)),
+		not(percept(enemy(Id, _, _, _, _, _, _, _, _, _))) then
+			delete(closestEnemy(Id, X, Y, Distance, Priority)).
+	
+	% Deleting the enemy is in a retreat region
+	if bel(closestEnemy(Id, X1, Y1, Distance, Priority)),
+		percept(enemy(Id, _, _, _, _, _, _, _, _, RegionId)),
+		bel(regionOrder(RegionId, _, 'retreat')) then
+			delete(closestEnemy(Id, X1, Y1, Distance, Priority)).
+	
+	% Updating the distance when it has changed
+	if bel(closestEnemy(Id, X1, Y1, Distance, Priority), status(_, _, X2, Y2, _)),
+		percept(enemy(Id, _, _, _, _, _, _, X3, Y3, _)),
+		bel(distanceSq(X2, Y2, X3, Y3, D23), (D23 \= Distance ; X1 \= X3 ; Y1 \= Y3)) then
+			delete(closestEnemy(Id, X1, Y1, Distance, Priority)) +
+			insert(closestEnemy(Id, X3, Y3, D23, Priority)).
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Clearing --------------------------------------- %%%%%%%%%%%%%%%
+	% Area cleared
+	if goal(task('attack', (X1, Y1, RegionId))), bel(status(_, _, X1, Y1, _)), not(percept(enemy(_, _, _, _, _, _, _, _, _, RegionId))) then
+		(battlemind).send:(cleared(X1, Y1)).
+}

@@ -1,0 +1,9 @@
+use BattleMind as knowledge.
+
+define debugdraw(String) with
+	pre { true }
+	post { true }
+
+define debugdraw(Id, String) with
+	pre { true }
+	post { true }

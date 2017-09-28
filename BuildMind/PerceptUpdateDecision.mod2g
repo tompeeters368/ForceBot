@@ -1,0 +1,12 @@
+use BuildMind as knowledge.
+use BuildMindPercepts as module.
+order = linear.
+
+/**
+* Responsible for percepts.
+*/
+module PerceptUpdateDecision {
+	if (_).sent:(buildRequest(_, _, _)) then BuildMindPercepts.
+	if (_).sent:(requestTransfer(_, _)) then BuildMindPercepts.
+	if percept(gameframe(F1)), bel(buildRequest(_, _, _), gameframe(F2), F2 + 100 < F1) then BuildMindPercepts.
+}

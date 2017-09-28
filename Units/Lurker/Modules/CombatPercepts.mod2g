@@ -1,0 +1,25 @@
+use "../Lurker.pl" as knowledge.
+use UpdateEnemy as module.
+order = linearall.
+
+module CombatPercepts {
+	%%%%%%%%%%%%%%% --------------------------------------- Updating enemies --------------------------------------- %%%%%%%%%%%%%%%
+	if (_).sent:(simDisabled) then {
+		forall bel(enemyDefense(Id, Type, X1, Y1)) do
+			delete(enemyDefense(Id, Type, X1, Y1)).	
+	}
+	
+	if bel(not(simDisabled)) then {
+		% Process received enemies
+		forall (_).sent:(enemyDefense(Id, Type, X1, Y1)), bel(not(enemyDefense(Id, _, _, _))) do
+			insert(enemyDefense(Id, Type, X1, Y1)).
+		
+		% Remove enemies confirmed gone
+		forall (_).sent:(not(enemyDefense(Id))), bel(enemyDefense(Id, Type, X1, Y1)) do
+			delete(enemyDefense(Id, Type, X1, Y1)).
+		
+		% Insert enemy defenses
+		forall percept(enemyDefense(Id, Type, _, _, _, _, _, X1, Y1, _)), bel(isDefensiveBuilding(Type)) do
+			UpdateEnemy(Id, Type, X1, Y1).
+	}
+}

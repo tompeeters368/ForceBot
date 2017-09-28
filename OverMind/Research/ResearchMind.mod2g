@@ -1,0 +1,93 @@
+use "../OverMind.pl" as knowledge.
+use "../Routines/Research.mod2g" as module.
+order = linearall.
+
+/**
+* Responsible for determining when to perform research.
+*/
+module ResearchMind(Frame) {	
+	%%%%%%%%%%%%%%% --------------------------------------- Research Timings --------------------------------------- %%%%%%%%%%%%%%%
+	% Research Zergling Speed
+	if	bel(canResearch('Metabolic Boost'), effectiveResources(_, Gas, _, _), Gas >= 100, friendly(Id, 'Zerg Spawning Pool'), not(researching(Id, _)), agent(Id, Agent)) then {
+		% We don't get it until later when going Muta's
+		if bel((currentStrategy('Mutalisk', _, _) ; openingUsed('ZVP_5Pool') ; openingUsed('ZVT_5Pool')), Frame > 7000) then
+			Research(Id, Agent, 'Metabolic Boost').
+			
+		% When not going Muta's we get it first
+		if bel(not((currentStrategy('Mutalisk', _, _) ; openingUsed('ZVP_5Pool') ; openingUsed('ZVT_5Pool')))) then
+			Research(Id, Agent, 'Metabolic Boost').
+	}
+	
+	% We research Adrenal Glands the instant we can
+	if	bel(canResearch('Adrenal Glands'), friendly(_, 'Zerg Hive'), friendly(Id, 'Zerg Spawning Pool'), not(researching(Id, _)), agent(Id, Agent)) then
+			Research(Id, Agent, 'Adrenal Glands').
+	
+	% Air unit upgrades
+	if bel(unitAmount('Zerg Mutalisk', Amount), Amount > 5) then {
+		% Once we have 5 Mutralisks we research Flyer Attacks against Protoss
+		if	bel(canResearch('Zerg Flyer Attacks'), enemyRace('protoss'),
+				friendly(Id, 'Zerg Spire'), not(researching(Id, _)), not(morphing(Id, _)), agent(Id, Agent)) then
+					Research(Id, Agent, 'Zerg Flyer Attacks').
+				
+		% Against the other races, research Flyer Carapace instead
+		if	bel(canResearch('Zerg Flyer Carapace'),
+				friendly(Id, 'Zerg Spire'), not(researching(Id, _)), not(morphing(Id, _)), agent(Id, Agent)) then
+					Research(Id, Agent, 'Zerg Flyer Carapace').
+				
+		% We research Flyer Attacks right after Flyer Carapace
+		if	bel(canResearch('Zerg Flyer Attacks'),
+				friendly(Id, 'Zerg Spire'), not(researching(Id, _)), not(morphing(Id, _)), agent(Id, Agent)) then
+					Research(Id, Agent, 'Zerg Flyer Attacks').
+	}
+			
+	% We research Missile Attacks the instant we can
+	if	bel(canResearch('Zerg Missile Attacks'), friendly(Id, 'Zerg Evolution Chamber'), not(researching(Id, _)), agent(Id, Agent)) then
+				Research(Id, Agent, 'Zerg Missile Attacks').
+			
+	% We research Carapace right after Missile Attacks
+	if	bel(canResearch( 'Zerg Carapace'), friendly(Id, 'Zerg Evolution Chamber'), not(researching(Id, _)), agent(Id, Agent)) then
+				Research(Id, Agent, 'Zerg Carapace').
+			
+	% We research Melee Attacks right after Carapace
+	if	bel(canResearch('Zerg Melee Attacks'), friendly(Id, 'Zerg Evolution Chamber'), not(researching(Id, _)), agent(Id, Agent)) then
+				Research(Id, Agent, 'Zerg Melee Attacks').
+	
+	% Hydralisk upgrades
+	if bel(not(unitAmount('Zerg Hydralisk', 0)), currentStrategy(Name, _, _), (Name = 'Hydralisks' ; Name = 'HydraLurker' ; Name = 'UltraHydra')) then {
+		if bel(Name \= 'Hydralisks', canResearch('Lurker Aspect'), friendly(_, 'Zerg Lair'), friendly(Id, 'Zerg Hydralisk Den'), not(morphing(Id, _)), agent(Id, Agent)) then
+				Research(Id, Agent, 'Lurker Aspect').
+				
+		if bel(canResearch('Muscular Augments'), friendly(Id, 'Zerg Hydralisk Den'), not(researching(Id, _)), agent(Id, Agent)) then
+				Research(Id, Agent, 'Muscular Augments').
+				
+		if bel(canResearch('Grooved Spines'), friendly(Id, 'Zerg Hydralisk Den'), not(researching(Id, _)), agent(Id, Agent)) then
+				Research(Id, Agent, 'Grooved Spines').
+	}
+			
+	% We research Chitinous Plating as soon as we can
+	if	bel(canResearch('Chitinous Plating'), friendly(Id, 'Zerg Ultralisk Cavern'), not(researching(Id, _)), agent(Id, Agent)) then
+				Research(Id, Agent, 'Chitinous Plating').
+			
+	% We research Anabolic Synthesis as soon as we can
+	if	bel(canResearch('Anabolic Synthesis'), friendly(Id, 'Zerg Ultralisk Cavern'), not(researching(Id, _)), agent(Id, Agent)) then
+				Research(Id, Agent, 'Anabolic Synthesis').
+	
+	%%%%%%%%%%%%%%% --------------------------------------- Time Events --------------------------------------- %%%%%%%%%%%%%%%
+	% If we did a 9 pool, delay the tech
+	if bel(openingUsed('ZVZ_9Pool') ; openingUsed('ZVU_9Pool')) then {
+		if bel(Frame >= 12500, canResearch('Pneumatized Carapace'), friendly(Id, 'Zerg Lair'), not(researching(Id, _)), not(morphing(Id, _)), agent(Id, Agent)) then
+				Research(Id, Agent, 'Pneumatized Carapace').
+				
+		if bel(Frame >= 20000, canResearch('Antennae'), friendly(Id, 'Zerg Lair'), not(researching(Id, _)), not(morphing(Id, _)), agent(Id, Agent)) then
+				Research(Id, Agent, 'Antennae').
+	}
+	
+	% If we didn't, get it (fairly) early
+	if bel(not(openingUsed('ZVZ_9Pool')), not(openingUsed('ZVU_9Pool'))) then {
+		if bel(Frame >= 10000, canResearch('Pneumatized Carapace'), friendly(Id, 'Zerg Lair'), not(researching(Id, _)), not(morphing(Id, _)), agent(Id, Agent)) then
+				Research(Id, Agent, 'Pneumatized Carapace').
+				
+		if bel(Frame >= 16000, canResearch('Antennae'), friendly(Id, 'Zerg Lair'), not(researching(Id, _)), not(morphing(Id, _)), agent(Id, Agent)) then
+				Research(Id, Agent, 'Antennae').
+	}
+}

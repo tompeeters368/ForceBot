@@ -1,0 +1,22 @@
+use "../Lurker.pl" as knowledge.
+use UpdateClosestEnemy as module.
+use UpdateClosestBuilding as module.
+order = linearall.
+
+/**
+* In charge of finding the closest enemy unit and building
+*/
+module AttackTargetting {
+	%%%%%%%%%%%%%%% --------------------------------------- Attack Order Decision Making --------------------------------------- %%%%%%%%%%%%%%%
+	if bel(status(_, _, X1, Y1, _)) then {
+		% Attack closest threatening unit
+		forall percept(enemy(Id, T2, _, _, _, _, _, X2, Y2, _)),
+			bel(isGroundUnit(T2), distanceSq(X1, Y1, X2, Y2, D12), D12 < 900) do
+				UpdateClosestEnemy(Id, X2, Y2, D12).
+				
+		% Attack non-threatening unit
+		forall percept(enemy(Id, T2, _, _, _, C2, _, X2, Y2, _)),
+			bel(isBuilding(T2), not(member(flying, C2)), distanceSq(X1, Y1, X2, Y2, D12), D12 < 900) do
+				UpdateClosestBuilding(Id, X2, Y2, D12).
+	}
+}

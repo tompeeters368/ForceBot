@@ -1,0 +1,8 @@
+use "../../BattleMind.pl" as knowledge.
+order = linear.
+
+module AddToFriendlySim(RegionId, Type, Vitality) {
+	if bel(friendlySim(RegionId, OGH, OAH, OGD, OAD, OBD), addSim(Type, Vitality, OGH, OAH, OGD, OAD, OBD, NGH, NAH, NGD, NAD, NBD)) then
+		delete(friendlySim(RegionId, OGH, OAH, OGD, OAD, OBD)) +
+		insert(friendlySim(RegionId, NGH, NAH, NGD, NAD, NBD)).
+}

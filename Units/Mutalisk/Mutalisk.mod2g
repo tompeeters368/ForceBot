@@ -1,0 +1,12 @@
+use Mutalisk as knowledge.
+use Modules.Attack as module.
+use Modules.Explore as module.
+use Modules.Defend as module.
+order = linear.
+
+module Mutalisk {
+	% Determining which module to run
+	if goal(task('attack', _)) then Attack.
+	if goal(task('explore', _)) then Explore.
+	if goal(task('defend', (X1, Y1, _))) then Defend(X1, Y1).
+}

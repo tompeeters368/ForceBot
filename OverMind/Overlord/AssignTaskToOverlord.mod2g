@@ -1,0 +1,21 @@
+use "../OverMind.pl" as knowledge.
+order = linearall.
+
+/**
+* Assigns the best task to an Overlord based on its current position.
+*/
+module AssignTaskToOverlord(Id, Agent, Task, X1, Y1, RegionId) {
+	if bel(scout(X1, Y1, RegionId)) then
+		delete(scout(X1, Y1, RegionId)).
+		
+	if bel(overlordOrder(Id, OldTask, OldTarget)) then
+		delete(overlordOrder(Id, OldTask, OldTarget)).
+		
+	if bel(Task = 'escort') then
+		insert(overlordOrder(Id, Task, null)) +
+		(Agent).send!(task(Task, null)).
+		
+	if bel(Task \= 'escort') then
+		insert(overlordOrder(Id, Task, (X1, Y1, RegionId))) +
+		(Agent).send!(task(Task, (X1, Y1, RegionId))).
+}

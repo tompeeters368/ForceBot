@@ -1,0 +1,31 @@
+use BuildMind as knowledge.
+order = linearall.
+
+/**
+* Responsible for percepts.
+*/
+module BuildMindPercepts {
+	% Save the gameframe that this was updated on
+	% gameframe percept
+	if percept(gameframe(Frames)), bel(gameframe(OldFrames)) then
+		delete(gameframe(OldFrames)) +
+		insert(gameframe(Frames)).
+	
+	% Since Vespene Geysers never go away, we don't need to delete them
+	forall percept(vespeneGeyser(FieldId, _, X, Y, RegionId)), not(bel(vespeneGeyser(FieldId, X, Y, RegionId))) do
+		insert(vespeneGeyser(FieldId, X, Y, RegionId)).
+		
+	% We delete Mineral Fields purely for performance
+	forall bel(mineralField(FieldId, X, Y, RegionId)), not(percept(mineralField(FieldId, _, _, _, _))) do
+		delete(mineralField(FieldId, X, Y, RegionId)).
+	% Insert Mineral Fields, don't insert blocks (useless building checks)
+	forall percept(mineralField(FieldId, Amount, X, Y, RegionId)), bel(Amount > 0, not(mineralField(FieldId, X, Y, RegionId))) do
+		insert(mineralField(FieldId, X, Y, RegionId)).
+		
+	% Delete Construction Sites
+	forall bel(constructionSite(X, Y, RegionId, Creep)), not(percept(constructionSite(X, Y, RegionId, Creep))) do
+			delete(constructionSite(X, Y, RegionId, Creep)).
+	% Insert Construction Sites
+	forall percept(constructionSite(X, Y, RegionId, Creep)), not(bel(constructionSite(X, Y, RegionId, Creep))) do
+			insert(constructionSite(X, Y, RegionId, Creep)).
+}

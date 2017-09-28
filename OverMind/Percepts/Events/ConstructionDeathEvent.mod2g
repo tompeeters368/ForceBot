@@ -1,0 +1,25 @@
+use "../../OverMind.pl" as knowledge.
+order = linearall.
+
+module ConstructionDeathEvent(Id, Type) {
+	% Decrement producingUnit for units that morph in pairs (when egg is destroyed)
+	if bel(not(isBuilding(Type)), (Type = 'Zerg Zergling' ; Type = 'Zerg Scourge'),
+		producingUnit(Type, Amount), Amount > 0, NewAmount is Amount - 2) then
+			delete(producingUnit(Type, Amount)) +
+			insert(producingUnit(Type, NewAmount)).
+		
+	% Decrement producingUnit for units that morph solo (when egg is destroyed)
+	if bel(not(isBuilding(Type)), not((Type = 'Zerg Zergling' ; Type = 'Zerg Scourge')),
+		producingUnit(Type, Amount), Amount > 0, NewAmount is Amount - 1) then
+			delete(producingUnit(Type, Amount)) +
+			insert(producingUnit(Type, NewAmount)).
+		
+	% Clear base beliefs when destroyed
+	if bel((Type = 'Zerg Hatchery' ; Type = 'Zerg Lair' ; Type = 'Zerg Hive'),
+		numberOfBases(OldBases), NewBases is OldBases - 1,
+		numberOfHatcheries(OldHatcheries), NewHatcheries is OldHatcheries + 1) then
+			delete(numberOfBases(OldBases)) +
+			insert(numberOfBases(NewBases)) +
+			delete(numberOfHatcheries(OldHatcheries)) +
+			insert(numberOfHatcheries(NewHatcheries)).
+}

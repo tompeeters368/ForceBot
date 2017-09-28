@@ -1,0 +1,18 @@
+use "../Ultralisk.pl" as knowledge.
+use "../../CombatModules/UpdateClosest.mod2g" as module.
+order = linear.
+
+/**
+* Module for targetting while defending.
+*/
+module DefendTargetting(X1, Y1) {
+	% Attack closest threatening unit
+	forall percept(enemy(Id, T2, _, _, _, C2, _, X2, Y2, _)),
+		bel(isGroundUnit(T2), member(detected, C2), distanceSq(X1, Y1, X2, Y2, D12), D12 < 625) do
+			UpdateClosest(Id, X2, Y2, D12, 1).
+			
+	% Attack non-threatening unit
+	forall percept(enemy(Id, T2, _, _, _, C2, _, X2, Y2, _)),
+		bel(isBuilding(T2), not(member(flying, C2)), distanceSq(X1, Y1, X2, Y2, D12), D12 < 625) do
+			UpdateClosest(Id, X2, Y2, D12, 2).
+}

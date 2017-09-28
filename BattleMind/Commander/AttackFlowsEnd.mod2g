@@ -1,0 +1,29 @@
+use "../BattleMind.act2g" as actionspec.
+use "../BattleMind.pl" as knowledge.
+use UpdateRegionOrder as module.
+order = linear.
+
+/**
+* Determines what units in each region should do.
+*/
+module AttackFlowsEnd(Source) {
+	% If there are enemies present
+	if bel(not(enemySim(Source, 0, 0, 0, 0, 0)), combatSim(Source, FHealth, FRemainder, EHealth, ERemainder)) then {
+		% If we would lose, or if our initial assessment isn't fighting, retreat
+		if bel(FRemainder * 2 > FHealth ; ownBase(_, _, Source)) then
+				UpdateRegionOrder(Source, null, 'fight').
+			
+		% Set the order to fight if necessary and continue the loop
+		if bel((ERemainder * 4 > EHealth ; regionOrder(Source, null, 'advance')), ownMain(_, _, RetreatId),
+			not(regionOrder(Source, RetreatId, 'retreat')), regionOrder(Source, OldTarget, OldOrder)) then
+				delete(regionOrder(Source, OldTarget, OldOrder)) +
+				insert(regionOrder(Source, RetreatId, 'retreat')) +
+				(fighterRegionOrders).send:(regionOrder(Source, RetreatId, 'retreat')).
+	}
+	
+	% If there are no enemies, set the order to advance
+	if bel(not(regionOrder(Source, null, 'advance')), regionOrder(Source, OldTarget, OldOrder)) then
+		delete(regionOrder(Source, OldTarget, OldOrder)) +
+		insert(regionOrder(Source, null, 'advance')) +
+		(fighterRegionOrders).send:(regionOrder(Source, null, 'advance')).
+}

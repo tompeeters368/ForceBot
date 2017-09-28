@@ -1,0 +1,25 @@
+use Generic as knowledge.
+
+% The research action
+define research(Id) with
+	pre { true }
+	post { true }
+
+% The upgrade action
+define upgrade(Id) with
+	pre { true }
+	post { true }
+
+% The morph action
+define morph(Id) with
+	pre { true }
+	post { true }
+
+% The train action
+define train(Id) with
+	pre { true }
+	post { true }
+
+define debugdraw(String) with
+	pre { true }
+	post { true }
